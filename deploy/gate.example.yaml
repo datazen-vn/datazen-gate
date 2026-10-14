@@ -1,0 +1,49 @@
+# dz-gate: cổng paywall đứng trước app của bạn. Khoá API đọc từ biến môi trường, không viết vào đây.
+gate:
+  listen: ":8080"
+  upstream: "http://app:3000"
+  mode: proxy
+
+hub:
+  base_url: "https://api.datazen.vn"
+  api_key_env: DZ_API_KEY      # dz_test_… hoặc dz_live_…
+  cache_ttl: 60s               # tối đa 10m; quyền KHÔNG có chỉ đệm ≤ 15s
+  stale_if_error: 0s           # tối đa 1h; 0s = tắt
+  fail_mode: closed            # closed (mặc định): hub lỗi ⇒ 503; open: cho qua (chỉ tính năng không đụng tiền)
+  timeout: 5s
+
+identity:
+  - type: jwt
+    jwks_url: "https://app.vn/.well-known/jwks.json"
+    issuer: "https://app.vn"
+    audience: app
+    subject_claim: sub
+    from: authorization        # authorization | cookie:<tên> | header:<tên>
+  - type: session_hook
+    url: "http://app:3000/api/me"
+    allow_hosts: ["app:3000"]  # host ngoài loopback được nhận cookie của khách
+    forward: [cookie, authorization]
+    subject_path: user.id
+    cache_ttl: 30s
+
+routes:
+  - { match: "/api/public/*", action: allow }
+  - { match: "/dashboard/*", action: require, feature: dashboard }
+  - { match: "/api/premium/*", action: require, feature: export, fail_mode: open }
+  - { match: "/pricing", action: soft }
+
+default_action: allow          # request không khớp tuyến nào: allow (mặc định) | require
+
+paywall:
+  plan_code: pro
+  public_origins: ["https://app.vn"]
+  login_url: /login
+  success_path: /billing/return   # luôn được bỏ qua kiểm quyền; nơi hub đưa khách về sau khi trả
+  cancel_path: /pricing
+
+inject:
+  strip_incoming: ["x-dz-*"]
+
+ops:
+  listen: "127.0.0.1:9090"
+  log_customer_ref: hash
