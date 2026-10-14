@@ -1,0 +1,57 @@
+# Cong CI cua kho `market-gate`. Khung chep tu `runtime-agent` (bo phan cap phat). KHONG co CI chay that (workspace chot 13/10):
+# tep nay la khung san de bat khi co runner; cong that la `bash cong/kiem-kho.sh` va `bash cong/kiem-govulncheck.sh` chay tay, dan dau ra vao PR.
+#
+# Luat ba trang thai: DAT=0 · TRUOT=1 · KHONG-KIEM-DUOC=2 ≠ mot dau ra giong het DAT. Xanh khong duoc doc thanh "da kiem" khi 0 goi / co ca BO QUA.
+
+name: cong
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  go:
+    runs-on: ${{ fromJSON(vars.DZ_NHAN_RUNNER || '["ubuntu-latest"]') }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          # Doc tu go.mod, khong ghi tay (ban ghi tay o `meta` da tung lech that).
+          go-version-file: go.mod
+
+      # gofmt · vet · build · test -race · 0 bo qua — mot cong, ma thoat 0/1/2. Ma 2 tren CI la DO (khong co "moi truong thieu").
+      - name: cổng kho
+        run: |
+          set -uo pipefail
+          ma=0; bash cong/kiem-kho.sh || ma=$?
+          echo "kiem-kho.sh -> mã $ma"
+          if [ "$ma" -eq 0 ]; then
+            echo "### ✅ cổng kho — gofmt · vet · build · test -race, 0 bỏ qua" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### ❌ cổng kho mã $ma (1 = trượt, 2 = KHÔNG KIỂM ĐƯỢC — trên CI là đỏ)" >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+      # Ban GHIM cua govulncheck, tai bang `go install` (khong `go run`: no nuot ma thoat 3). Loi mang = ma 2 = do, khong phai sach.
+      - name: govulncheck
+        run: |
+          set -uo pipefail
+          ma=0; bash cong/kiem-govulncheck.sh || ma=$?
+          echo "kiem-govulncheck.sh -> mã $ma"
+          [ "$ma" -eq 0 ] || exit 1
+
+  # `lint-kho.sh` cua meta can `../meta` ngang hang — runner chi checkout MOT kho, nen dung composite action trong `market-meta`
+  # (cung cach `runtime-agent`). CHUA CHUNG MINH luc chay (khong co CI that): neu `uses:` lien kho private doi ma thong hanh thi
+  # buoc nay do — luc do thay bang buoc checkout `market-meta` roi chay `workspace/lint-kho.sh`.
+  lint-kho:
+    runs-on: ${{ fromJSON(vars.DZ_NHAN_RUNNER || '["ubuntu-latest"]') }}
+    steps:
+      # `path:` BAT BUOC va phai la ten that cua kho: lint giai `](../meta/docs/...)` tu vi tri file, nen hai kho phai ngang hang.
+      - uses: actions/checkout@v4
+        with:
+          path: gate
+      - uses: datazen-vn/market-meta/.github/actions/lint-kho@main
+        if: ${{ !cancelled() }}
+        with:
+          kho: gate
