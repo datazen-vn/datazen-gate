@@ -70,6 +70,9 @@ func (r *chayCa) chayMot(where string, y YeuCau, e Expect) {
 	if e.UpstreamCalled != nil && called != *e.UpstreamCalled {
 		r.t.Errorf("%s: upstream_called = %v, mong %v", where, called, *e.UpstreamCalled)
 	}
+	if e.UpstreamCalledTheoMatTien != nil && e.UpstreamCalledTheoMatTien.Gate != nil && called != *e.UpstreamCalledTheoMatTien.Gate {
+		r.t.Errorf("%s: upstream_called (mặt tiền gate) = %v, mong %v", where, called, *e.UpstreamCalledTheoMatTien.Gate)
+	}
 	if e.UpstreamRequestHeaders != nil {
 		if !called {
 			r.t.Errorf("%s: upstream phải được gọi để kiểm header", where)
