@@ -8,7 +8,7 @@ Trạng thái: đang xây (repo private tới khi E2E lát 2 xanh).
 |---|---|---|---|
 | Khớp tuyến, danh tính (JWT+JWKS, session hook), client hub, lõi quyết định + paywall, cấu hình + kiểm luật | có | | |
 | Reverse proxy (xoá/tiêm header), `/_dz/healthz`/`readyz`/`metrics`, `cmd/dz-gate`, runner conformance (62 ca gate-v1) | | có | |
-| Dockerfile, compose, tài liệu triển khai, forward-auth | | | có |
+| Dockerfile, compose, tài liệu triển khai, `kiem-docker.sh` (forward-auth: chưa) | | | có (PR này) |
 
 ## Hành vi (tóm tắt)
 
@@ -37,11 +37,16 @@ Trạng thái: đang xây (repo private tới khi E2E lát 2 xanh).
 
 `/premium/*` KHÔNG khớp `/premium.json`, nhưng Rails (`(.:format)`) và Spring < 5.3 (suffix pattern) định tuyến `/premium.json` về handler của `/premium`. Khai `/premium*` (hoặc cả `/premium` lẫn `/premium.*`), hoặc `default_action: require` rồi liệt kê phần công khai bằng `allow`.
 
+## Tài liệu
+
+[Triển khai](docs/trien-khai.md) · [Cấu hình](docs/cau-hinh.md) · [Phản hồi, mã lỗi, số đo](docs/ma-loi.md) · [Changelog](CHANGELOG.md) · mẫu: `deploy/gate.example.yaml`, `deploy/compose.example.yml`, `deploy/Dockerfile`.
+
 ## Phát triển
 
 ```bash
 bash cong/kiem-kho.sh          # gofmt · vet · build · test -race (0 bỏ qua)
 bash cong/kiem-conformance.sh  # 62 ca gate-v1 của meta, ghim SHA
+bash cong/kiem-docker.sh       # build image thật + chạy + request qua cổng (cần docker)
 bash cong/kiem-govulncheck.sh
 ```
 
