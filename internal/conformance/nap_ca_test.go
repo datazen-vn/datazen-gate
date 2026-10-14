@@ -19,11 +19,7 @@ type Ca struct {
 	Config      map[string]any        `json:"config"`
 	Hub         CaHub                 `json:"hub"`
 	SessionHook *CaSessionHook        `json:"session_hook"`
-	// JWKS: trả lời của `identity[].jwks_url` — `{error:{status}}` = JWKS không tải được; vắng ⇒ cũng không tải được (README "Khối jwks").
-	JWKS *struct {
-		Error struct{ Status int } `json:"error"`
-	} `json:"jwks"`
-	Steps []Buoc `json:"steps"`
+	Steps       []Buoc                `json:"steps"`
 }
 
 type CaHub struct {

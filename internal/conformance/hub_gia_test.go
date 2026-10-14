@@ -31,9 +31,6 @@ type HubGia struct {
 	spec    CaHub
 	hook    *CaSessionHook
 	hookURL string
-	// jwksURL + jwksStatus: danh tính jwt dùng `jwks_url`; bộ ca chỉ thử đường LỖI.
-	jwksURL    []string
-	jwksStatus int
 
 	mu     sync.Mutex
 	calls  []luotGoi
@@ -42,8 +39,8 @@ type HubGia struct {
 	loiCauHinh []string
 }
 
-func newHubGia(spec CaHub, hook *CaSessionHook, hookURL string, jwksURL []string, jwksStatus int) *HubGia {
-	return &HubGia{spec: spec, hook: hook, hookURL: hookURL, jwksURL: jwksURL, jwksStatus: jwksStatus, served: map[string]int{}}
+func newHubGia(spec CaHub, hook *CaSessionHook, hookURL string) *HubGia {
+	return &HubGia{spec: spec, hook: hook, hookURL: hookURL, served: map[string]int{}}
 }
 
 func (h *HubGia) soGoi() int { h.mu.Lock(); defer h.mu.Unlock(); return len(h.calls) }
@@ -104,11 +101,6 @@ var duongEnt = regexp.MustCompile(`^/v1/customers/([^/]+)/entitlements$`)
 func (h *HubGia) RoundTrip(req *http.Request) (*http.Response, error) {
 	if h.hookURL != "" && req.URL.String() == h.hookURL {
 		return h.session(req)
-	}
-	for _, u := range h.jwksURL {
-		if req.URL.String() == u {
-			return jsonRes(h.jwksStatus, map[string]string{"code": "jwks-error", "message": "x", "trace_id": "t"}, nil), nil
-		}
 	}
 	if req.URL.Scheme+"://"+req.URL.Host != hubBaseURL {
 		h.loiCH("gọi tới URL lạ: %s", req.URL.Redacted())

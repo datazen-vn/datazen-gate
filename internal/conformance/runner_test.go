@@ -119,21 +119,7 @@ func chayMotCa(t *testing.T, c Ca) {
 			}
 		}
 	}
-	var jwksURL []string
-	if ids, ok := c.Config["identity"].([]any); ok {
-		for _, i := range ids {
-			if m, ok := i.(map[string]any); ok && m["type"] == "jwt" {
-				if u, ok := m["jwks_url"].(string); ok {
-					jwksURL = append(jwksURL, u)
-				}
-			}
-		}
-	}
-	jwksStatus := 500
-	if c.JWKS != nil {
-		jwksStatus = c.JWKS.Error.Status
-	}
-	r.hub = newHubGia(c.Hub, c.SessionHook, hookURL, jwksURL, jwksStatus)
+	r.hub = newHubGia(c.Hub, c.SessionHook, hookURL)
 	cfg := dungCauHinh(t, c, r.up.URL)
 	r.dich, err = chay.Lap(cfg, chay.TuyChon{
 		Env:  func(k string) (string, bool) { return apiKeyThu, k == "DZ_API_KEY" },

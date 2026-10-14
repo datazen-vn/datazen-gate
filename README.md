@@ -7,7 +7,7 @@ Trạng thái: đang xây (repo private tới khi E2E lát 2 xanh).
 | | PR #1 | PR #2 (đây) | PR #3 |
 |---|---|---|---|
 | Khớp tuyến, danh tính (JWT+JWKS, session hook), client hub, lõi quyết định + paywall, cấu hình + kiểm luật | có | | |
-| Reverse proxy (xoá/tiêm header), `/_dz/healthz`/`readyz`/`metrics`, `cmd/dz-gate`, runner conformance (63 ca gate-v1) | | có | |
+| Reverse proxy (xoá/tiêm header), `/_dz/healthz`/`readyz`/`metrics`, `cmd/dz-gate`, runner conformance (62 ca gate-v1) | | có | |
 | Dockerfile, compose, tài liệu triển khai, forward-auth | | | có |
 
 ## Hành vi (tóm tắt)
@@ -40,7 +40,7 @@ Trạng thái: đang xây (repo private tới khi E2E lát 2 xanh).
 
 ```bash
 bash cong/kiem-kho.sh          # gofmt · vet · build · test -race (0 bỏ qua)
-bash cong/kiem-conformance.sh  # 63 ca gate-v1 của meta, ghim SHA
+bash cong/kiem-conformance.sh  # 62 ca gate-v1 của meta, ghim SHA
 bash cong/kiem-govulncheck.sh
 ```
 

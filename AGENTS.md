@@ -54,7 +54,7 @@ Go 1.26.9 (`go.mod`).
 
 ```bash
 bash cong/kiem-kho.sh          # gofmt · vet · build · test -race, 0 ca bỏ qua (trừ conformance). Mã thoát 0 đạt · 1 trượt · 2 không kiểm được
-bash cong/kiem-conformance.sh  # 63 ca gate-v1 của meta qua proxy thật, 0 skip, -race, ghim SHA meta (DZ_META_DIR hoặc ../meta)
+bash cong/kiem-conformance.sh  # 62 ca gate-v1 của meta qua proxy thật, 0 skip, -race, ghim SHA meta (DZ_META_DIR hoặc ../meta)
 bash cong/kiem-govulncheck.sh  # lỗ hổng đã biết mà code gọi tới (cần mạng để tải govulncheck)
 dz-gate --check deploy/gate.example.yaml   # cần DZ_API_KEY trong môi trường
 ```
