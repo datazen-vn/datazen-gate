@@ -1,0 +1,35 @@
+# dz-gate đứng trước app có sẵn. Sao chép thành `compose.yml`, cạnh `gate.yaml` (từ gate.example.yaml) và `.env` (DZ_API_KEY=dz_test_…).
+#
+#   docker compose up -d
+#   curl -i http://localhost:8080/        # đi qua gate
+#
+# BẮT BUỘC: `app` KHÔNG publish cổng và CHỈ tới được qua gate. Upstream tin `X-DZ-*`; app mở cổng ra ngoài song song là header giả
+# đi thẳng vào app mà gate không cứu được. Mạng `noi-bo` là `internal: true` (không ra Internet, không có đường vào từ máy chủ);
+# chỉ dz-gate nằm ở CẢ HAI mạng (cần ra Internet để gọi hub, và vào noi-bo để tới app).
+services:
+  app:
+    image: your-app:latest # ← app của bạn
+    # KHÔNG `ports:`. `expose` chỉ để tài liệu hoá, không mở ra máy chủ.
+    expose: ["3000"]
+    networks: [noi-bo]
+    restart: unless-stopped
+
+  dz-gate:
+    image: dz-gate:0.1.0 # hoặc build: { context: .., dockerfile: deploy/Dockerfile }
+    depends_on: [app]
+    env_file: .env # DZ_API_KEY=dz_test_… (và DZ_JWT_SECRET nếu dùng secret_env)
+    volumes:
+      - ./gate.yaml:/etc/dz-gate/gate.yaml:ro
+    ports:
+      - "8080:8080" # CHỈ cổng của khách. KHÔNG publish 9090 (vận hành).
+    networks: [noi-bo, ngoai]
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    # healthcheck đã nằm trong image (distroless không có shell)
+
+networks:
+  noi-bo:
+    internal: true
+  ngoai: {}

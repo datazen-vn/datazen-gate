@@ -42,11 +42,12 @@ internal/chay        ráp tất cả (Lap) + chạy tiến trình + mã thoát
 internal/conformance runner Go của bộ ca gate-v1 (meta): proxy thật + hub/hook/upstream giả + đồng hồ giả, bước `parallel`
 internal/dem         bộ đệm TTL + FIFO (generic)      internal/gopgoi   singleflight (generic)
 cong/                cổng của kho (kiem-kho.sh, kiem-conformance.sh, kiem-govulncheck.sh, hop-dong-ghim.json)
-deploy/              gate.example.yaml (= cauhinh.Mau, có test canh)
+deploy/              gate.example.yaml (= cauhinh.Mau, có test canh), Dockerfile, compose.example.yml
+docs/                trien-khai.md, cau-hinh.md, ma-loi.md
 testdata/            vector JWT/JWKS sinh bằng `jose` của sdk (sinh-vector.mjs)
 ```
 
-Chưa có (PR #3): Dockerfile, compose, tài liệu triển khai, `forward-auth`.
+Chưa có: chế độ `forward-auth`.
 
 ## Lệnh thường dùng
 
@@ -55,6 +56,7 @@ Go 1.26.9 (`go.mod`).
 ```bash
 bash cong/kiem-kho.sh          # gofmt · vet · build · test -race, 0 ca bỏ qua (trừ conformance). Mã thoát 0 đạt · 1 trượt · 2 không kiểm được
 bash cong/kiem-conformance.sh  # 62 ca gate-v1 của meta qua proxy thật, 0 skip, -race, ghim SHA meta (DZ_META_DIR hoặc ../meta)
+bash cong/kiem-docker.sh       # build image thật (distroless nonroot < 15 MB), chạy read-only, request qua cổng, compose mẫu đúng luật (cần docker)
 bash cong/kiem-govulncheck.sh  # lỗ hổng đã biết mà code gọi tới (cần mạng để tải govulncheck)
 dz-gate --check deploy/gate.example.yaml   # cần DZ_API_KEY trong môi trường
 ```
