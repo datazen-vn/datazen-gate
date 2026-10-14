@@ -257,3 +257,34 @@ func TestVongLap508VaGiaMaoHeaderQuaProxyThat(t *testing.T) {
 		t.Fatalf("header giả bị xoá, Hop mới do gate đặt: %d %v", res.StatusCode, nhan)
 	}
 }
+
+func TestLapNoiPublicOriginsVaoXForwardedHostVaVungDZ(t *testing.T) {
+	var nhan http.Header
+	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { nhan = r.Header.Clone() }))
+	defer up.Close()
+	cfg, _ := cauhinh.Doc(strings.NewReader(`{
+	  "gate": {"listen": ":18082", "upstream": "` + up.URL + `"}, "hub": {"base_url": "http://127.0.0.1:1"},
+	  "routes": [{"match": "/dashboard/*", "action": "require"}],
+	  "paywall": {"plan_code": "pro", "public_origins": ["https://app.test", "https://www.app.test"]}}`))
+	cfg.MacDinh()
+	cfg.Identity = []cauhinh.Identity{{Type: "jwt", Secret: strings.Repeat("s", 32), Issuer: "i", Audience: "a"}}
+	d, err := Lap(cfg, TuyChon{Env: envOK, PhienBan: "t"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := httptest.NewServer(d.Chinh)
+	defer s.Close()
+	c, _ := net.Dial("tcp", strings.TrimPrefix(s.URL, "http://"))
+	_, _ = c.Write([]byte("GET /mo HTTP/1.1\r\nHost: evil.test\r\nX-Forwarded-Host: x\r\nConnection: close\r\n\r\n"))
+	_, _ = bufio.NewReader(c).ReadString('\n')
+	c.Close()
+	if nhan.Get("X-Forwarded-Host") != "app.test" || nhan.Get("X-Forwarded-Proto") != "https" {
+		t.Fatalf("X-Forwarded-* phải theo public_origins: %v", nhan)
+	}
+	nhan = nil
+	res, _ := http.Get(s.URL + "/_dz/healthz")
+	res.Body.Close()
+	if res.StatusCode != 404 || nhan != nil {
+		t.Fatalf("/_dz/* ở mặt công khai ⇒ 404, không tới app: %d", res.StatusCode)
+	}
+}

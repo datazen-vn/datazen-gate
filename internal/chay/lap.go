@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/datazen-vn/market-gate/internal/cauhinh"
@@ -60,7 +61,7 @@ func Lap(cfg *cauhinh.Config, o TuyChon) (*Dich, error) {
 	}
 	hash := cfg.Ops.LogCustomerRef == "hash"
 	pr := proxy.Moi(proxy.Cau{
-		Cong: cong.Cong, Upstream: up, Xoa: cfg.XoaHeader(), Transport: o.Transport,
+		Cong: cong.Cong, Upstream: up, Xoa: cfg.XoaHeader(), CongKhai: congKhai(cfg), Transport: o.Transport,
 		QuanSat: func(r *http.Request, kq quyetdinh.KetQua, d time.Duration) {
 			ghiRequest(log, do, bam, hash, r, kq, d)
 			if o.QuanSat != nil {
@@ -74,6 +75,17 @@ func Lap(cfg *cauhinh.Config, o TuyChon) (*Dich, error) {
 		vanhanh.Kiem{Ten: "hub", Fn: cong.Khach.Ping},
 	)
 	return &Dich{Chinh: pr, Ops: vanhanh.Ops(do, ss), Cong: cong, Do: do, SanSang: ss}, nil
+}
+
+// congKhai: origin của paywall.public_origins (đã qua Kiem: https://host[:port]).
+func congKhai(cfg *cauhinh.Config) []proxy.Origin {
+	var ds []proxy.Origin
+	for _, raw := range cfg.Paywall.PublicOrigins {
+		if u, err := url.Parse(raw); err == nil && u.Host != "" {
+			ds = append(ds, proxy.Origin{Scheme: u.Scheme, Host: strings.ToLower(u.Host)})
+		}
+	}
+	return ds
 }
 
 func diaChiTCP(u *url.URL) string {

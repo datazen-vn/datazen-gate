@@ -391,3 +391,88 @@ func TestXoaHeaderTrucTiep(t *testing.T) {
 		t.Fatalf("%v", h)
 	}
 }
+
+func TestHeaderGiaGachDuoiBiXoaQuaProxyThat(t *testing.T) {
+	u := moiUpstream(t, nil)
+	e := &hub.KetQua{TrangThai: hub.Active, MaGoi: "pro", Nguon: hub.NguonMang}
+	s := dungProxy(t, u, choQua("cus_that", e), func(c *Cau) { c.Xoa = append(append([]string{}, xoaMacDinh...), "x-internal-*") })
+	req, _ := http.NewRequest("GET", s.URL+"/x", nil)
+	spoof := map[string]string{
+		"X_DZ_Customer_Ref": "admin_1", "X-DZ_Plan": "enterprise", "x_dz_features": "everything", "X_Forwarded_User": "root",
+		"X_Auth_Request_User": "root", "X_Auth_Request_Email": "r@x", "X_Internal_Secret": "s", "X-Internal_Other": "s",
+	}
+	for k, v := range spoof {
+		req.Header.Set(k, v)
+	}
+	req.Header.Set("X-Giu-Nguyen", "ok")
+	if _, err := http.DefaultClient.Do(req); err != nil {
+		t.Fatal(err)
+	}
+	got := u.cuoi(t).Header
+	for k := range spoof {
+		if got.Get(k) != "" {
+			t.Errorf("%s lọt tới upstream: %q (Rack/PHP/WSGI sẽ đọc nó như dạng gạch ngang)", k, got.Get(k))
+		}
+	}
+	if got.Get("X-Giu-Nguyen") != "ok" || got.Get("X-DZ-Customer-Ref") != "cus_that" || got.Get("X-DZ-Plan") != "pro" {
+		t.Fatalf("header thường giữ, giá trị của gate: %v", got)
+	}
+}
+
+func TestChuanHoaTenHeaderVaMauCungDuocChuanHoa(t *testing.T) {
+	cacTruongHop := map[string]string{"X_DZ_Customer_Ref": "x-dz-customer-ref", "X-DZ_Plan": "x-dz-plan", "ABC": "abc", "a_b-c_d": "a-b-c-d"}
+	for vao, mong := range cacTruongHop {
+		if got := ChuanHoaTenHeader(vao); got != mong {
+			t.Errorf("%q → %q, mong %q", vao, got, mong)
+		}
+	}
+	h := http.Header{}
+	h.Set("X_Foo_Bar", "1")
+	h.Set("X-Keep", "2")
+	XoaHeader(h, []string{"x_foo-*"}) // mẫu viết bằng gạch dưới cũng khớp (đã chuẩn hoá)
+	if h.Get("X_Foo_Bar") != "" || h.Get("X-Keep") != "2" {
+		t.Fatalf("%v", h)
+	}
+}
+
+func TestXForwardedHostChiTuPublicOrigins(t *testing.T) {
+	u := moiUpstream(t, nil)
+	s := dungProxy(t, u, choQua("c", nil), func(c *Cau) {
+		c.CongKhai = []Origin{{Scheme: "https", Host: "app.test"}, {Scheme: "https", Host: "www.app.test:8443"}}
+	})
+	cacTruongHop := []struct {
+		ten, reqLine, host, mongHost string
+	}{
+		{"Host khớp origin đầu", "GET /x HTTP/1.1", "app.test", "app.test"},
+		{"Host khớp origin sau (hoa/thường)", "GET /x HTTP/1.1", "WWW.App.Test:8443", "www.app.test:8443"},
+		{"Host lạ ⇒ origin đầu", "GET /x HTTP/1.1", "evil.test", "app.test"},
+		{"request-line tuyệt đối tới host lạ", "GET http://evil.test/x HTTP/1.1", "evil.test", "app.test"},
+		{"khớp host nhưng sai port ⇒ origin đầu", "GET /x HTTP/1.1", "www.app.test", "app.test"},
+	}
+	for _, c := range cacTruongHop {
+		_ = guiTho(t, strings.TrimPrefix(s.URL, "http://"), c.reqLine+"\r\nHost: "+c.host+"\r\nX-Forwarded-Host: ke-tan-cong.test\r\nX-Forwarded-Proto: gopher\r\nConnection: close\r\n\r\n")
+		got := u.cuoi(t).Header
+		if got.Get("X-Forwarded-Host") != c.mongHost || got.Get("X-Forwarded-Proto") != "https" {
+			t.Errorf("%s: X-Forwarded-Host=%q Proto=%q, mong %q https", c.ten, got.Get("X-Forwarded-Host"), got.Get("X-Forwarded-Proto"), c.mongHost)
+		}
+	}
+}
+
+func TestVungDZTrenCongCongKhaiTra404KhongProxy(t *testing.T) {
+	u := moiUpstream(t, nil)
+	s := dungProxy(t, u, choQua("", nil), nil) // bypass ẩn danh: quyết định `allowed`
+	for _, p := range []string{"/_dz/healthz", "/_dz/readyz", "/_dz/metrics", "/_dz", "/_dz/", "/_dz/x/y?a=1", "/%5Fdz/x", "/_dz/../x", "//_dz/healthz"} {
+		got := guiTho(t, strings.TrimPrefix(s.URL, "http://"), "GET "+p+" HTTP/1.1\r\nHost: a\r\nConnection: close\r\n\r\n")
+		if !strings.HasPrefix(got, "HTTP/1.1 404") || !strings.Contains(got, "Cache-Control: no-store") {
+			t.Errorf("%s: %.80q", p, got)
+		}
+	}
+	if u.soGoi() != 0 {
+		t.Fatalf("/_dz/* không được chuyển tới app: %d lần", u.soGoi())
+	}
+	for _, p := range []string{"/_dzx", "/dz/x", "/a/_dz/x", "/api/dz/webhook"} {
+		if got := guiTho(t, strings.TrimPrefix(s.URL, "http://"), "GET "+p+" HTTP/1.1\r\nHost: a\r\nConnection: close\r\n\r\n"); !strings.HasPrefix(got, "HTTP/1.1 200") {
+			t.Errorf("%s phải tới app: %.60q", p, got)
+		}
+	}
+}

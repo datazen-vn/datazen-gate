@@ -12,13 +12,24 @@ import (
 	"github.com/datazen-vn/market-gate/internal/tuyen"
 )
 
-// XoaHeader xoá khỏi `h` mọi header khớp một mẫu glob (so tên KHÔNG phân biệt hoa/thường; mẫu viết thường). Dùng để loại header
+// ChuanHoaTenHeader: hạ chữ thường VÀ đổi `_` thành `-`. Server theo quy ước CGI (Rack/Puma/Unicorn, PHP-FPM, WSGI cũ, Gunicorn < 22)
+// đổi cả hai dấu thành `HTTP_X_DZ_CUSTOMER_REF`, nên `X_DZ_Customer_Ref` mà lọt qua thì upstream đọc nó như `X-DZ-Customer-Ref`
+// (panel an ninh gate #2, C1-PR2; README gate-v1 "Tên header").
+func ChuanHoaTenHeader(ten string) string {
+	return strings.ReplaceAll(strings.ToLower(ten), "_", "-")
+}
+
+// XoaHeader xoá khỏi `h` mọi header khớp một mẫu glob; tên header VÀ mẫu đều được ChuanHoaTenHeader trước khi so. Dùng để loại header
 // danh tính/quyền do CLIENT tự đặt (`X-DZ-*`, `X-Auth-Request-*`, `X-Forwarded-User`, + strip_incoming): upstream tin `X-DZ-*` nên
 // client KHÔNG được giả.
 func XoaHeader(h http.Header, mau []string) {
+	chuan := make([]string, len(mau))
+	for i, m := range mau {
+		chuan[i] = ChuanHoaTenHeader(m)
+	}
 	for ten := range h {
-		l := strings.ToLower(ten)
-		for _, m := range mau {
+		l := ChuanHoaTenHeader(ten)
+		for _, m := range chuan {
 			if tuyen.KhopGlob(m, l) {
 				delete(h, ten)
 				break
