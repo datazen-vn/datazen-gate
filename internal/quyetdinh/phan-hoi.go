@@ -34,6 +34,9 @@ const (
 	MaVong          = "dz_gate_loop"
 )
 
+// RetryAfterDanhTinh: giá trị `Retry-After` (giây) của 503 `dz_identity_unavailable`.
+const RetryAfterDanhTinh = "5"
+
 // DinhDangMoc: RFC 3339 UTC, bỏ phần thập phân thừa (`…:00Z`) — khớp `formatInstant` của SDK.
 func DinhDangMoc(t time.Time) string { return t.UTC().Format(time.RFC3339Nano) }
 

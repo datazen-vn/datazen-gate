@@ -227,15 +227,25 @@ func TestSoftKhongBaoGioChan(t *testing.T) {
 	}
 }
 
-func TestDanhTinhKhongBietLa503HoacFailOpen(t *testing.T) {
+func TestDanhTinhKhongBietLa503KhongBaoGioFailOpen(t *testing.T) {
 	s := moiThietLap(t, tuyChon{})
-	kq := s.xuLy(yc{uri: "/premium/x", header: map[string]string{"X-User-Hong": "1", "Accept": "application/json"}, anon: true})
-	if kq.Quyet.LyDo != LyDoKhongSan || kq.Quyet.Tu != TuDanhTinh || kq.PhanHoi.Status != 503 || thanJSON(t, kq.PhanHoi)["code"] != "dz_identity_unavailable" {
-		t.Fatalf("%+v %s", kq.Quyet, kq.PhanHoi.Than)
+	h := map[string]string{"X-User-Hong": "1", "Accept": "application/json"}
+	// /premium/* (closed) và /api/premium/* (fail_mode: open): CẢ HAI đều 503 + Retry-After; kẻ tấn công tự gây lỗi danh tính được.
+	for _, uri := range []string{"/premium/x", "/api/premium/x"} {
+		kq := s.xuLy(yc{uri: uri, header: h, anon: true})
+		if kq.Quyet.Cho || kq.Quyet.LyDo != LyDoKhongSan || kq.Quyet.Tu != TuDanhTinh || kq.PhanHoi.Status != 503 {
+			t.Fatalf("%s: %+v", uri, kq.Quyet)
+		}
+		if thanJSON(t, kq.PhanHoi)["code"] != "dz_identity_unavailable" || kq.PhanHoi.Header.Get("Retry-After") != "5" || kq.PhanHoi.Header.Get("Cache-Control") != "no-store" {
+			t.Fatalf("%s: %s %v", uri, kq.PhanHoi.Than, kq.PhanHoi.Header)
+		}
 	}
-	op := s.xuLy(yc{uri: "/api/premium/x", header: map[string]string{"X-User-Hong": "1", "Accept": "application/json"}, anon: true})
-	if !op.Quyet.Cho || op.Nguon != hub.NguonMoCua || op.Quyet.MaKhach != "" {
-		t.Fatalf("tuyến open + danh tính không xác định ⇒ cho qua ẩn danh, đánh dấu fail-open: %+v", op)
+	if s.entGoi() != 0 {
+		t.Fatal("danh tính lỗi không chạm hub")
+	}
+	// Lỗi HUB thì vẫn theo fail_mode (chỉ danh tính bị siết); tuyến soft không bao giờ chặn.
+	if kq := s.xuLy(yc{uri: "/pricing", header: h, anon: true}); !kq.Quyet.Cho || kq.Nguon != hub.NguonMoCua || kq.Quyet.MaKhach != "" {
+		t.Fatalf("soft: %+v", kq)
 	}
 }
 
