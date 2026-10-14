@@ -32,10 +32,18 @@ func (c *Cong) tuChoi(ctx context.Context, r *http.Request, q Quyet, route Route
 			ma = MaDanhTinhKhong
 		}
 		p = phanHoiLoi(r.Method, q.Status, ma)
+		if q.Tu == TuDanhTinh {
+			p.Header.Set("Retry-After", RetryAfterDanhTinh) // lỗi tạm; cố định 5 giây (README gate-v1)
+		}
 	case LyDoKhongCoQuyen:
 		goi := route.MaGoi
 		if goi == "" {
 			goi = c.Paywall.MaGoi
+		}
+		// Khách ĐÃ active đúng gói này mà vẫn thiếu feature của tuyến: không có gì để bán thêm cùng gói (hub sẽ 409 thue-bao-dang-hieu-luc)
+		// ⇒ 402 không checkout_url, KHÔNG tạo phiên (panel an ninh C1). Gói khác (đổi gói) vẫn tạo phiên.
+		if q.KetQua.TrangThai == hub.Active && q.KetQua.MaGoi == goi {
+			return ketQuaTuChoi{ketQua: KetQua{Quyet: q, PhanHoi: phanHoi402(r.Method, q, goi)}}
 		}
 		url, err := c.Paywall.URLThanhToan(ctx, q.MaKhach, goi, c.Paywall.URLQuayVe(r.Host))
 		if err != nil {
