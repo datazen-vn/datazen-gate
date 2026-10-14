@@ -28,6 +28,8 @@ type Cau struct {
 	// origin thì dùng origin đó, không khớp thì dùng origin ĐẦU — không bao giờ chuyển nguyên Host do client chọn (app bật "trust proxy"
 	// dựng URL tuyệt đối/link đặt lại mật khẩu theo host kẻ tấn công). Rỗng ⇒ giữ giá trị SetXForwarded (Host client).
 	CongKhai []Origin
+	// GiuGachDuoi: true ⇒ KHÔNG bỏ header gạch dưới của client (mặc định false: bỏ hết, xem BoHeaderGachDuoi). Header danh tính vẫn bị xoá.
+	GiuGachDuoi bool
 	// Transport tới upstream; nil ⇒ DungTransport().
 	Transport http.RoundTripper
 	// QuanSat nhận kết quả của MỌI request (cho log/metric) sau khi xong; không được chặn lâu. nil = bỏ.
@@ -84,13 +86,18 @@ func Moi(c Cau) http.Handler {
 func (h *handler) viet(pr *httputil.ProxyRequest) {
 	kq, _ := pr.In.Context().Value(khoaKetQua{}).(quyetdinh.KetQua)
 	pr.SetURL(h.cau.Upstream)
+	// THỨ TỰ: xoá TRƯỚC (kể cả `forwarded`, `x-forwarded-*` mọi biến thể, `x-real-ip`… do client tự khai), rồi mới tự đặt X-Forwarded-*
+	// từ kết nối thật, rồi tiêm header của gate. Đảo thứ tự thì xoá nhầm chính header vừa đặt.
+	if !h.cau.GiuGachDuoi {
+		BoHeaderGachDuoi(pr.Out.Header)
+	}
+	XoaHeader(pr.Out.Header, h.cau.Xoa)
 	pr.SetXForwarded()
 	if len(h.cau.CongKhai) > 0 {
 		o := h.congKhaiCua(pr.In.Host)
 		pr.Out.Header.Set("X-Forwarded-Host", o.Host)
 		pr.Out.Header.Set("X-Forwarded-Proto", o.Scheme) // gate nghe HTTP sau bộ kết thúc TLS: scheme thật của mặt công khai là của origin
 	}
-	XoaHeader(pr.Out.Header, h.cau.Xoa)
 	TiemHeader(pr.Out.Header, kq)
 }
 

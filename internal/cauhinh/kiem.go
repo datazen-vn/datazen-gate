@@ -174,6 +174,9 @@ func kiemPaywall(k *KetQuaKiem, c *Config) {
 }
 
 func kiemInjectOps(k *KetQuaKiem, c *Config) {
+	if c.Inject.AllowUnderscoreHeaders {
+		k.canh("inject.allow_underscore_headers", "cho header gạch dưới của client đi qua: server CGI-style (Rack/PHP/WSGI) đọc `X_Custom` như `X-Custom` nên client mạo được header của app (header danh tính X_DZ_* vẫn bị xoá); chỉ bật khi app thật sự cần")
+	}
 	if len(c.Inject.StripIncoming) > soStripToiDa {
 		k.loi("inject.strip_incoming", "tối đa %d mẫu", soStripToiDa)
 	}

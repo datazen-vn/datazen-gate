@@ -61,7 +61,7 @@ func Lap(cfg *cauhinh.Config, o TuyChon) (*Dich, error) {
 	}
 	hash := cfg.Ops.LogCustomerRef == "hash"
 	pr := proxy.Moi(proxy.Cau{
-		Cong: cong.Cong, Upstream: up, Xoa: cfg.XoaHeader(), CongKhai: congKhai(cfg), Transport: o.Transport,
+		Cong: cong.Cong, Upstream: up, Xoa: cfg.XoaHeader(), CongKhai: congKhai(cfg), GiuGachDuoi: cfg.Inject.AllowUnderscoreHeaders, Transport: o.Transport,
 		QuanSat: func(r *http.Request, kq quyetdinh.KetQua, d time.Duration) {
 			ghiRequest(log, do, bam, hash, r, kq, d)
 			if o.QuanSat != nil {

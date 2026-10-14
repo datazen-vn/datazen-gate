@@ -38,6 +38,17 @@ func XoaHeader(h http.Header, mau []string) {
 	}
 }
 
+// BoHeaderGachDuoi bỏ mọi header có `_` trong tên (như nginx `underscores_in_headers off`): server CGI-style đổi `_` thành `-` nên
+// `X_Custom` mạo được `X-Custom`; chuẩn hoá tên ở XoaHeader chỉ phủ nhóm danh tính/quyền đã biết, còn header của chính app thì không biết
+// được — cách chắc là không cho gạch dưới đi qua (trừ khi vận hành khai `inject.allow_underscore_headers`).
+func BoHeaderGachDuoi(h http.Header) {
+	for ten := range h {
+		if strings.Contains(ten, "_") {
+			delete(h, ten)
+		}
+	}
+}
+
 func giaTriAnToan(v string) bool {
 	if len(v) < 1 || len(v) > 512 {
 		return false
