@@ -1,0 +1,7 @@
+/dz-gate
+/bin/
+*.test
+*.out
+.env
+.env.*
+!.env.example
