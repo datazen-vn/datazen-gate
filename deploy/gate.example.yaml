@@ -6,7 +6,7 @@ gate:
 
 hub:
   base_url: "https://api.datazen.vn"
-  api_key_env: DZ_API_KEY      # dz_test_… hoặc dz_live_…
+  api_key_env: DZ_API_KEY      # dz_test_… hoặc dz_live_…; hoặc đặt DZ_API_KEY_FILE=<tệp chứa khoá> (secrets) thay cho biến
   cache_ttl: 60s               # tối đa 10m; quyền KHÔNG có chỉ đệm ≤ 15s
   stale_if_error: 0s           # tối đa 1h; 0s = tắt
   fail_mode: closed            # closed (mặc định): hub lỗi ⇒ 503; open: cho qua (chỉ tính năng không đụng tiền)

@@ -316,3 +316,37 @@ func TestLapNoiAllowUnderscoreHeaders(t *testing.T) {
 		}
 	}
 }
+
+// DZ_API_KEY_FILE: khoá đọc từ tệp (Docker/Kubernetes secrets) phải tới hub y như khoá từ biến môi trường, và --check chấp nhận nó.
+func TestKhoaApiTuTepToiHubVaCheckChapNhan(t *testing.T) {
+	const khoa = "dz_test_khoa-tu-tep-abc123"
+	tep := t.TempDir() + "/dz_api_key"
+	if err := os.WriteFile(tep, []byte(khoa+"\n"), 0o400); err != nil {
+		t.Fatal(err)
+	}
+	envTep := envThu(map[string]string{"DZ_API_KEY_FILE": tep})
+	if ma, out, errb := chayMain([]string{"--check", "../../deploy/gate.example.yaml"}, envTep); ma != MaDat || !strings.Contains(out, "cấu hình hợp lệ") {
+		t.Fatalf("--check với khoá từ tệp: %d %q %q", ma, out, errb)
+	}
+	var thay string
+	hubGia := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		thay = r.Header.Get("Authorization")
+		_ = json.NewEncoder(w).Encode(map[string]any{"customer_ref": "cus_x", "status": "none"})
+	}))
+	defer hubGia.Close()
+	cfg, err := cauhinh.Doc(strings.NewReader(`{"gate": {"listen": ":18081", "upstream": "http://127.0.0.1:1"}, "hub": {"base_url": "` + hubGia.URL + `"},
+	  "routes": [{"match": "/x", "action": "allow"}], "paywall": {"plan_code": "pro", "public_origins": ["https://app.test"]}}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cfg.MacDinh()
+	cfg.Identity = []cauhinh.Identity{{Type: "jwt", Secret: strings.Repeat("s", 32), Issuer: "i", Audience: "a"}}
+	d, err := Lap(cfg, TuyChon{Env: envTep, HTTP: hubGia.Client(), PhienBan: "9.9.9"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	_ = d.Cong.Khach.Ping(t.Context())
+	if thay != "Bearer "+khoa {
+		t.Fatalf("hub phải nhận khoá từ tệp (đã cắt xuống dòng), nhận %q", thay)
+	}
+}

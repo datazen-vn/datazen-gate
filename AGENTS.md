@@ -65,7 +65,7 @@ Không có CI chạy thật (workspace chốt 13/10): dán đầu ra ba cổng v
 
 ## Ranh giới
 
-- **Không giữ bí mật của dev trong YAML**: khoá API qua `hub.api_key_env`, secret HMAC qua `secret_env`.
+- **Không giữ bí mật của dev trong YAML**: khoá API qua `hub.api_key_env` (hoặc `<env>_FILE` trỏ tới tệp secrets), secret HMAC qua `secret_env`.
 - **Không log `customer_ref`/cookie/token/khoá**; lỗi trả ra không chứa chúng (dev hay dùng email làm ref).
 - **Fail-closed mặc định.** Chỉ lỗi mạng/timeout/5xx của hub mới được `stale_if_error`/`fail_mode: open` cứu; `401/403/404/429` luôn là `503`.
 - Hành vi lệch SDK = một trong hai mặt tiền sai: sửa ca ở meta trước, không "sửa runner cho khớp".
