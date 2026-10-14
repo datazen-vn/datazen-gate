@@ -147,6 +147,7 @@ func TestJWKSLoiTaiKhongBaoGioChapNhanTokenVaDungKhoaCu(t *testing.T) {
 		t.Fatalf("mong *LoiHaTang, có %v", err)
 	}
 	hong.Store(false)
+	dh.tien(40 * time.Second) // hết đệm âm (30 s + jitter ≤ 20%)
 	if _, err := j.Khoa(context.Background(), "rsa-1", "RS256"); err != nil {
 		t.Fatal(err)
 	}
@@ -231,5 +232,61 @@ func TestJWKSDongThoiChiTaiMotLan(t *testing.T) {
 	wg.Wait()
 	if soTai.Load() != 1 {
 		t.Fatalf("20 lời gọi đầu tiên gộp thành 1 lần tải: %d", soTai.Load())
+	}
+}
+
+func TestJWKSChetThiDemAmKhongBaoTaiMoiRequest(t *testing.T) {
+	// T2 (panel an ninh): JWKS hỏng KHÔNG được làm MỌI request tải lại và chờ tới timeout.
+	j, soTai, dh := jwksGia(t, func(w http.ResponseWriter, r *http.Request) { http.Error(w, "x", 500) })
+	var ha *LoiHaTang
+	for i := 0; i < 30; i++ {
+		if _, err := j.Khoa(context.Background(), "rsa-1", "RS256"); !errors.As(err, &ha) || errors.Is(err, ErrTokenSai) {
+			t.Fatalf("lần %d: phải là LoiHaTang (không phải 'token sai'): %v", i, err)
+		}
+	}
+	if soTai.Load() != 1 {
+		t.Fatalf("30 request khi JWKS chết ⇒ đúng 1 lần tải: %d", soTai.Load())
+	}
+	dh.tien(29 * time.Second) // còn trong đệm âm tối thiểu (cooldown 30 s)
+	_, _ = j.Khoa(context.Background(), "rsa-1", "RS256")
+	if soTai.Load() != 1 {
+		t.Fatalf("29 s: vẫn trong đệm âm: %d", soTai.Load())
+	}
+	dh.tien(8 * time.Second) // 37 s > 30 s + 20% jitter
+	_, _ = j.Khoa(context.Background(), "rsa-1", "RS256")
+	if soTai.Load() != 2 {
+		t.Fatalf("hết đệm âm ⇒ thử lại đúng một lần: %d", soTai.Load())
+	}
+}
+
+func TestJWKSDemAmVanDungKhoaCuKhiTimDuoc(t *testing.T) {
+	var hong atomic.Bool
+	j, soTai, dh := jwksGia(t, func(w http.ResponseWriter, r *http.Request) {
+		if hong.Load() {
+			http.Error(w, "x", 500)
+			return
+		}
+		phucVuFile(t)(w, r)
+	})
+	if _, err := j.Khoa(context.Background(), "rsa-1", "RS256"); err != nil {
+		t.Fatal(err)
+	}
+	hong.Store(true)
+	dh.tien(11 * time.Minute) // quá cũ ⇒ làm tươi lỗi ⇒ vào đệm âm, nhưng khoá cũ vẫn dùng được
+	for i := 0; i < 10; i++ {
+		if _, err := j.Khoa(context.Background(), "rsa-1", "RS256"); err != nil {
+			t.Fatalf("lần %d: khoá cũ vẫn phải dùng được: %v", i, err)
+		}
+	}
+	if soTai.Load() != 2 {
+		t.Fatalf("1 lần tải đầu + 1 lần làm tươi lỗi, rồi đệm âm: %d", soTai.Load())
+	}
+	// kid lạ trong đệm âm ⇒ vẫn là lỗi hạ tầng (không đổ oan cho token)
+	var ha *LoiHaTang
+	if _, err := j.Khoa(context.Background(), "khong-co", "RS256"); !errors.As(err, &ha) {
+		t.Fatalf("%v", err)
+	}
+	if soTai.Load() != 2 {
+		t.Fatalf("kid lạ trong đệm âm không tải lại: %d", soTai.Load())
 	}
 }

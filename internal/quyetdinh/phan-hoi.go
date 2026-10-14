@@ -32,6 +32,8 @@ const (
 	MaHubKhongSan   = "dz_hub_unavailable"
 	MaDanhTinhKhong = "dz_identity_unavailable"
 	MaVong          = "dz_gate_loop"
+	MaUpstream      = "dz_upstream_unavailable"
+	MaKhongCo       = "dz_not_found"
 )
 
 // RetryAfterDanhTinh: giá trị `Retry-After` (giây) của 503 `dz_identity_unavailable`.
@@ -83,4 +85,15 @@ func phanHoi402(phuongThuc string, q Quyet, maGoi string) *PhanHoi {
 		b.GraceUntil = &s
 	}
 	return phanHoiJSON(phuongThuc, http.StatusPaymentRequired, b)
+}
+
+// PhanHoiKhongTimThay: 404 JSON `dz_not_found`, `no-store` — vùng `/_dz/*` thuộc về gate, không chuyển tiếp tới app.
+func PhanHoiKhongTimThay(phuongThuc string) *PhanHoi {
+	return phanHoiLoi(phuongThuc, http.StatusNotFound, MaKhongCo)
+}
+
+// PhanHoiUpstreamLoi: upstream (app của dev) không trả lời ⇒ 502 JSON `dz_upstream_unavailable`, `no-store`. KHÔNG kèm chi tiết lỗi mạng
+// (có thể lộ địa chỉ nội bộ).
+func PhanHoiUpstreamLoi(phuongThuc string) *PhanHoi {
+	return phanHoiLoi(phuongThuc, http.StatusBadGateway, MaUpstream)
 }
