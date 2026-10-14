@@ -20,13 +20,18 @@ services:
     env_file: .env # DZ_API_KEY=dz_test_… (và DZ_JWT_SECRET nếu dùng secret_env)
     volumes:
       - ./gate.yaml:/etc/dz-gate/gate.yaml:ro
+    # Chỉ bind loopback: gate nghe HTTP trơn, TLS do LB/Caddy cùng máy kết thúc rồi trỏ vào 127.0.0.1:8080. KHÔNG đổi thành "8080:8080"
+    # (= 0.0.0.0): Docker tự chèn rule iptables nên VƯỢT ufw/firewalld, cookie phiên/Bearer đi rõ ra Internet mà gate lại báo app là `https`.
+    # LB ở máy khác: dùng mạng riêng và bind đúng IP riêng đó, đừng publish 0.0.0.0. KHÔNG publish 9090 (vận hành).
     ports:
-      - "8080:8080" # CHỈ cổng của khách. KHÔNG publish 9090 (vận hành).
+      - "127.0.0.1:8080:8080"
     networks: [noi-bo, ngoai]
     restart: unless-stopped
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
+    mem_limit: 256m # gate nhỏ (vài chục MB); trần chống một yêu cầu/đệm phình làm sập cả máy
+    pids_limit: 256
     # healthcheck đã nằm trong image (distroless không có shell)
 
 networks:

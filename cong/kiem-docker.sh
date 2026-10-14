@@ -7,8 +7,8 @@
 # daemon khong tra loi, khong keo duoc image can thiet).
 #
 # Kiem (moi muc la mot dong `[DAT]`/`[DO]`):
-#   image < 15 MB · USER nonroot · --version · --check deploy/gate.example.yaml · compose mau: `app` KHONG publish cong, chi `dz-gate` publish 8080,
-#   mang noi-bo internal · healthcheck cua image tu `starting` len `healthy` · app KHONG publish cong · cong van hanh KHONG publish ·
+#   image < 15 MB · USER nonroot · --version · --check deploy/gate.example.yaml · compose mau: `app` KHONG publish cong, chi `dz-gate` publish 8080 TREN
+#   LOOPBACK, co mem_limit/pids_limit, mang noi-bo internal · moi `FROM` cua Dockerfile ghim digest · healthcheck cua image tu `starting` len `healthy` · app KHONG publish cong · cong van hanh KHONG publish ·
 #   request qua cong: tuyen allow toi app (200), tuyen require khong danh tinh 401 no-store, /_dz/* mat cong khai 404 · cong van hanh (netns chung):
 #   healthz, metrics · app chet => 502 dz_upstream_unavailable · log KHONG chua khoa API/secret · docker stop => thoat ma 0.
 #
@@ -63,16 +63,20 @@ echo "── compose mẫu ──"
 mkdir -p "$TMP/cp" && cp deploy/compose.example.yml "$TMP/cp/compose.yml" && cp deploy/gate.example.yaml "$TMP/cp/gate.yaml" && echo "DZ_API_KEY=$KHOA" >"$TMP/cp/.env"
 if docker compose -f "$TMP/cp/compose.yml" config --format json >"$TMP/cp/cfg.json" 2>"$TMP/cp/err.txt"; then
   if command -v python3 >/dev/null 2>&1; then
-    python3 - "$TMP/cp/cfg.json" <<'PY' && dat "compose mẫu: app không publish cổng, chỉ dz-gate publish 8080, noi-bo internal" || do_ "compose mẫu sai luật (app có ports / publish thừa / noi-bo không internal)"
+    python3 - "$TMP/cp/cfg.json" <<'PY' && dat "compose mẫu: app không publish cổng, dz-gate chỉ publish 8080 trên loopback, noi-bo internal" || do_ "compose mẫu sai luật (app có ports / publish thừa hoặc ra 0.0.0.0 / noi-bo không internal)"
 import json, sys
 c = json.load(open(sys.argv[1]))
 s = c["services"]
 assert not s["app"].get("ports"), "app không được publish cổng"
 pub = [(p.get("published"), p.get("target")) for p in s["dz-gate"].get("ports", [])]
 assert pub == [("8080", 8080)], f"dz-gate chỉ publish 8080: {pub}"
+# Gate nghe HTTP trơn: publish ra 0.0.0.0 (mặc định khi thiếu host_ip) vượt ufw/firewalld và phơi cookie/Bearer ra Internet.
+ips = [p.get("host_ip") for p in s["dz-gate"]["ports"]]
+assert all(i in ("127.0.0.1", "::1") for i in ips), f"cổng publish phải bind loopback, đang: {ips}"
 assert c["networks"]["noi-bo"].get("internal") is True, "noi-bo phải internal"
 assert "noi-bo" in s["app"]["networks"] and "ngoai" not in s["app"]["networks"], "app chỉ ở noi-bo"
 assert set(s["dz-gate"]["networks"]) == {"noi-bo", "ngoai"}
+assert s["dz-gate"].get("mem_limit") and s["dz-gate"].get("pids_limit"), "dz-gate phải có mem_limit và pids_limit"
 PY
   else
     echo "[MÃ 2] KHÔNG KIỂM ĐƯỢC compose mẫu — không có python3"; exit 2
@@ -80,6 +84,9 @@ PY
 else
   do_ "docker compose config: $(head -c 200 "$TMP/cp/err.txt")"
 fi
+
+# Base image ghim theo digest: tag bị đẩy đè thì build không đổi lặng lẽ (chuỗi cung ứng, build tái lập).
+if grep -E '^FROM ' deploy/Dockerfile | grep -vqE '@sha256:[0-9a-f]{64}'; then do_ "deploy/Dockerfile có FROM chưa ghim digest"; else dat "mọi FROM của Dockerfile ghim digest"; fi
 
 echo "── chạy ──"
 docker network create "$NET" >/dev/null || { echo "[MÃ 2] KHÔNG KIỂM ĐƯỢC — không tạo được mạng docker"; exit 2; }

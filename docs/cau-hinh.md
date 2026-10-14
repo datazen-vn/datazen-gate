@@ -11,7 +11,7 @@ dz-gate --version
 
 `--check` đọc biến môi trường thật (cần `DZ_API_KEY`). Mẫu đầy đủ, có chú thích: [`deploy/gate.example.yaml`](../deploy/gate.example.yaml) (một nguồn duy nhất với `internal/cauhinh/mau.go`, có test canh).
 
-Tệp gắn vào container phải **đọc được bởi uid 65532** (nonroot): `chmod 644 gate.yaml`.
+Tệp gắn vào container phải **đọc được bởi uid 65532** (nonroot) và chỉ bởi uid đó: `sudo chown 65532:65532 gate.yaml && chmod 0400 gate.yaml`.
 
 ## `gate`
 
@@ -91,7 +91,7 @@ Upstream Rails/Spring cũ: `/premium/*` KHÔNG khớp `/premium.json`; khai `/pr
 
 - `strip_incoming`: tên header (chữ thường, glob `*`) cần xoá thêm khỏi request đến.
 - `allow_underscore_headers` (`false`): mặc định gate BỎ mọi header có `_` trong tên của client. Bật chỉ khi app thật sự cần (có cảnh báo).
-- Luôn xoá (không cấu hình được): `x-dz-*`, `x-auth-request-*`, `x-forwarded-user`, `forwarded`, `x-forwarded-*`, `x-original-forwarded-*`, `x-real-ip`, `x-client-ip`, `x-cluster-client-ip`, `true-client-ip`, `cf-connecting-ip`, `fastly-client-ip`. Tên được chuẩn hoá (`_` → `-`, chữ thường) trước khi so.
+- Luôn xoá (không cấu hình được): `x-dz-*`, `x-auth-request-*`, `x-forwarded-user`, `forwarded`, `x-forwarded-*`, `x-original-forwarded-*`, `x-real-ip`, `x-client-ip`, `x-cluster-client-ip`, `true-client-ip`, `cf-connecting-ip`, `fastly-client-ip`, `fly-client-ip`, `client-ip`, `x-originating-ip`, `x-remote-ip`, `x-remote-addr`; header ghi đè đường dẫn/host `x-original-url`, `x-rewrite-url`, `x-original-uri`, `x-original-host`, `x-host`, `x-http-host-override`. Tên được chuẩn hoá (`_` → `-`, chữ thường) trước khi so.
 
 Header gate tiêm cho upstream: `X-DZ-Customer-Ref`, `X-DZ-Entitlement-Status`, `X-DZ-Plan`, `X-DZ-Features` (csv, sắp xếp), `X-DZ-Grace-Until` (RFC 3339 UTC, chỉ khi đang ân hạn), `X-DZ-Entitlement-Source` (`network|cache|stale|fail-open`), `X-DZ-Gate-Hop: 1`. Chỉ có khi cho qua và có khách; bypass ẩn danh chỉ có `Gate-Hop`.
 
@@ -99,7 +99,7 @@ Header gate tiêm cho upstream: `X-DZ-Customer-Ref`, `X-DZ-Entitlement-Status`, 
 
 | Trường | Mặc định | Luật |
 |---|---|---|
-| `listen` | `127.0.0.1:9090` | bind RIÊNG, ≠ `gate.listen`. Không bao giờ `0.0.0.0` trên mạng công cộng |
+| `listen` | `127.0.0.1:9090` | bind RIÊNG, ≠ `gate.listen`. Trong docker giữ `127.0.0.1:9090`; không bao giờ `0.0.0.0` (bind cả mạng nội bộ lẫn mạng ngoài) |
 | `log_customer_ref` | `hash` | `hash` (`sha256(salt‖ref)[:16]`, salt ngẫu nhiên mỗi tiến trình) hoặc `none`; không bao giờ log ref thô |
 
 Cổng vận hành: `/_dz/healthz` (tiến trình sống), `/_dz/readyz` (upstream TCP + hub/khoá API, đệm 5 s, 503 khi chưa sẵn sàng), `/_dz/metrics` (Prometheus).
