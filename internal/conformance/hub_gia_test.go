@@ -169,7 +169,11 @@ func (h *HubGia) checkout(req *http.Request) (*http.Response, error) {
 	var spec map[string]any
 	_ = json.Unmarshal(h.spec.Checkout, &spec)
 	if e, ok := spec["error"].(map[string]any); ok {
-		return jsonRes(int(e["status"].(float64)), map[string]string{"code": "checkout-error", "message": "x", "trace_id": "t"}, nil), nil
+		ma, _ := e["code"].(string) // `error.code` tuỳ chọn (vd 409 thue-bao-dang-hieu-luc); mặc định checkout-error
+		if ma == "" {
+			ma = "checkout-error"
+		}
+		return jsonRes(int(e["status"].(float64)), map[string]string{"code": ma, "message": "x", "trace_id": "t"}, nil), nil
 	}
 	spec["id"] = "cs_conf_1"
 	return jsonRes(201, spec, nil), nil

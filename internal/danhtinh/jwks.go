@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"math/rand/v2"
 	"net/http"
 	"strings"
 	"sync"
@@ -46,8 +47,13 @@ type JWKS struct {
 	khoa    []khoaJWK
 	taiLuc  time.Time
 	daTai   bool
+	denLoi  time.Time // đệm ÂM: tới mốc này KHÔNG tải lại sau một lần tải lỗi
+	loiCuoi *LoiHaTang
 	nhomTai gopgoi.Nhom[struct{}]
 }
+
+// DoLech: hệ số ngẫu nhiên [0,1) cho jitter của đệm âm; hàm để test cố định giá trị. Jitter tới +20% để nhiều instance không cùng tải lại một lúc.
+var doLech = rand.Float64
 
 // MoiJWKS: `client` nil ⇒ client mặc định không theo chuyển hướng. `url` phải đã được kiểm (https/loopback) ở cấu hình.
 func MoiJWKS(url string, client *http.Client, timeout, cooldown time.Duration, now func() time.Time) *JWKS {
@@ -88,13 +94,32 @@ func (j *JWKS) Khoa(ctx context.Context, kid, alg string) (any, error) {
 	if k, ok := j.tim(kid, alg); ok {
 		return k, nil
 	}
+	// Đang trong đệm âm (lần tải gần nhất lỗi) mà không tìm được khoá: đó là "không hỏi được JWKS" (503), không phải "token sai" (401).
+	if l := j.loiTrongDemAm(); l != nil {
+		return nil, l
+	}
 	return nil, fmt.Errorf("%w: không có khoá JWKS khớp kid/alg", ErrTokenSai)
+}
+
+// loiTrongDemAm trả lỗi tải gần nhất nếu còn trong đệm âm.
+func (j *JWKS) loiTrongDemAm() *LoiHaTang {
+	j.mu.Lock()
+	defer j.mu.Unlock()
+	if j.loiCuoi != nil && j.now().Before(j.denLoi) {
+		return j.loiCuoi
+	}
+	return nil
 }
 
 // canTaiLai: kidLa = true khi khoá cần tìm CHƯA có (kid lạ) ⇒ chịu cooldown; false ⇒ chỉ tải lại khi dữ liệu quá cũ.
 func (j *JWKS) canTaiLai(kidLa bool) bool {
 	j.mu.Lock()
 	defer j.mu.Unlock()
+	// ĐỆM ÂM: sau một lần tải LỖI không tải lại trong `cooldown` (+ jitter ≤ 20%), bất kể có khoá cũ hay không — nếu không, JWKS chết ⇒
+	// MỌI request (singleflight chỉ gộp lời gọi đồng thời) đều tải lại và chờ tới timeout (bão tải + mỗi request chậm 5 s).
+	if j.loiCuoi != nil && j.now().Before(j.denLoi) {
+		return false
+	}
 	if !j.daTai {
 		return true
 	}
@@ -143,12 +168,16 @@ func hopThuatToan(k khoaJWK, alg string) bool {
 func (j *JWKS) tai(ctx context.Context) error {
 	_, err, _ := j.nhomTai.Chay("jwks", func() (struct{}, error) {
 		khoa, err := j.keVe(ctx)
+		j.mu.Lock()
+		defer j.mu.Unlock()
 		if err != nil {
+			j.denLoi = j.now().Add(time.Duration(float64(j.cooldown) * (1 + 0.2*doLech())))
+			if ha, ok := err.(*LoiHaTang); ok {
+				j.loiCuoi = ha
+			}
 			return struct{}{}, err
 		}
-		j.mu.Lock()
-		j.khoa, j.taiLuc, j.daTai = khoa, j.now(), true
-		j.mu.Unlock()
+		j.khoa, j.taiLuc, j.daTai, j.loiCuoi = khoa, j.now(), true, nil
 		return struct{}{}, nil
 	})
 	return err

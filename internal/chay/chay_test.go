@@ -216,3 +216,44 @@ func TestLapTuChoiCauHinhSai(t *testing.T) {
 		t.Fatal("cấu hình sai phải bị từ chối")
 	}
 }
+
+func TestVongLap508VaGiaMaoHeaderQuaProxyThat(t *testing.T) {
+	// T4 (panel an ninh): kiểm X-DZ-Gate-Hop TRƯỚC khi xoá header x-dz-*; sau khi xoá thì đặt Hop mới vào request gửi upstream.
+	hubGia := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]any{"customer_ref": "cus_1", "status": "active", "plan_code": "pro", "features": map[string]bool{"dashboard": true}})
+	}))
+	defer hubGia.Close()
+	var goi int
+	var nhan http.Header
+	up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { goi++; nhan = r.Header.Clone() }))
+	defer up.Close()
+	cfg, _ := cauhinh.Doc(strings.NewReader(`{
+	  "gate": {"listen": ":18081", "upstream": "` + up.URL + `"}, "hub": {"base_url": "` + hubGia.URL + `"},
+	  "routes": [{"match": "/dashboard/*", "action": "require", "feature": "dashboard"}],
+	  "paywall": {"plan_code": "pro", "public_origins": ["https://app.test"]}}`))
+	cfg.MacDinh()
+	cfg.Identity = []cauhinh.Identity{{Type: "jwt", Secret: strings.Repeat("s", 32), Issuer: "i", Audience: "a"}}
+	d, err := Lap(cfg, TuyChon{Env: envOK, HTTP: hubGia.Client(), PhienBan: "t"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := httptest.NewServer(d.Chinh)
+	defer s.Close()
+
+	req, _ := http.NewRequest("GET", s.URL+"/mo", nil)
+	req.Header.Set("X-DZ-Gate-Hop", "1")
+	res, _ := http.DefaultClient.Do(req)
+	res.Body.Close()
+	if res.StatusCode != 508 || goi != 0 {
+		t.Fatalf("có Gate-Hop ở request đến ⇒ 508, không gọi upstream (kể cả tuyến không cần quyền): %d, upstream %d lần", res.StatusCode, goi)
+	}
+	req, _ = http.NewRequest("GET", s.URL+"/mo", nil)
+	req.Header.Set("X-DZ-Customer-Ref", "admin")
+	req.Header.Set("x-dz-entitlement-status", "active")
+	res, _ = http.DefaultClient.Do(req)
+	res.Body.Close()
+	if res.StatusCode != 200 || goi != 1 || nhan.Get("X-DZ-Customer-Ref") != "" || nhan.Get("X-DZ-Entitlement-Status") != "" || nhan.Get("X-DZ-Gate-Hop") != "1" {
+		t.Fatalf("header giả bị xoá, Hop mới do gate đặt: %d %v", res.StatusCode, nhan)
+	}
+}
