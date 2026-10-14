@@ -32,6 +32,7 @@ const (
 	MaHubKhongSan   = "dz_hub_unavailable"
 	MaDanhTinhKhong = "dz_identity_unavailable"
 	MaVong          = "dz_gate_loop"
+	MaUpstream      = "dz_upstream_unavailable"
 )
 
 // DinhDangMoc: RFC 3339 UTC, bỏ phần thập phân thừa (`…:00Z`) — khớp `formatInstant` của SDK.
@@ -80,4 +81,10 @@ func phanHoi402(phuongThuc string, q Quyet, maGoi string) *PhanHoi {
 		b.GraceUntil = &s
 	}
 	return phanHoiJSON(phuongThuc, http.StatusPaymentRequired, b)
+}
+
+// PhanHoiUpstreamLoi: upstream (app của dev) không trả lời ⇒ 502 JSON `dz_upstream_unavailable`, `no-store`. KHÔNG kèm chi tiết lỗi mạng
+// (có thể lộ địa chỉ nội bộ).
+func PhanHoiUpstreamLoi(phuongThuc string) *PhanHoi {
+	return phanHoiLoi(phuongThuc, http.StatusBadGateway, MaUpstream)
 }
