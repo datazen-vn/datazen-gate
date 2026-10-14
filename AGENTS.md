@@ -30,29 +30,36 @@ Nguồn sự thật là `../meta/workspace/repos.yaml` — sửa ở đó, khôn
 ## Bố cục
 
 ```
+cmd/dz-gate          main mỏng (--config / --check / --healthcheck / --version)
 internal/tuyen       khớp đường dẫn: glob first-match, bốn dạng (thô/giải mã/chuẩn hoá/chữ thường), bypass mặc định
 internal/danhtinh    resolver danh tính: chuỗi, jwt (+jwks), session_hook, khuôn customer_ref
-internal/hub         client hub: entitlements (đệm, ETag/304, stale-if-error, gộp lời gọi, trần đọc tươi), checkout-sessions
+internal/hub         client hub: entitlements (đệm, ETag/304, stale-if-error, gộp lời gọi, trần đọc tươi), checkout-sessions, Ping
 internal/quyetdinh   lõi quyết định + paywall (302/401/402/503/508), phiên thanh toán đệm theo replace_after
+internal/proxy       reverse proxy: XOÁ header danh tính/quyền của client, TIÊM X-DZ-*, hop-by-hop, X-Forwarded-* từ kết nối thật, 502 khi upstream chết
+internal/vanhanh     log JSON (băm customer_ref), bộ đếm Prometheus, /_dz/{healthz,readyz,metrics} trên bind riêng
 internal/cauhinh     YAML → struct, kiểm MỌI luật (liệt kê hết), dựng Cong
+internal/chay        ráp tất cả (Lap) + chạy tiến trình + mã thoát
+internal/conformance runner Go của bộ ca gate-v1 (meta): proxy thật + hub/hook/upstream giả + đồng hồ giả, bước `parallel`
 internal/dem         bộ đệm TTL + FIFO (generic)      internal/gopgoi   singleflight (generic)
-cong/                cổng của kho (kiem-kho.sh, kiem-govulncheck.sh)
-testdata/            vector JWT/JWKS sinh bằng `jose` của sdk (sinh-vector.mjs) — chứng minh phần xác minh Go khớp cài đặt độc lập
+cong/                cổng của kho (kiem-kho.sh, kiem-conformance.sh, kiem-govulncheck.sh, hop-dong-ghim.json)
+deploy/              gate.example.yaml (= cauhinh.Mau, có test canh)
+testdata/            vector JWT/JWKS sinh bằng `jose` của sdk (sinh-vector.mjs)
 ```
 
-Chưa có (PR #2): `internal/proxy`, `internal/vanhanh`, `cmd/dz-gate`, `internal/conformance` (chạy bộ ca meta).
+Chưa có (PR #3): Dockerfile, compose, tài liệu triển khai, `forward-auth`.
 
 ## Lệnh thường dùng
 
 Go 1.26.9 (`go.mod`).
 
 ```bash
-bash cong/kiem-kho.sh          # gofmt · vet · build · test -race, 0 ca bỏ qua. Mã thoát 0 đạt · 1 trượt · 2 không kiểm được
+bash cong/kiem-kho.sh          # gofmt · vet · build · test -race, 0 ca bỏ qua (trừ conformance). Mã thoát 0 đạt · 1 trượt · 2 không kiểm được
+bash cong/kiem-conformance.sh  # 57 ca gate-v1 của meta qua proxy thật, 0 skip, -race, ghim SHA meta (DZ_META_DIR hoặc ../meta)
 bash cong/kiem-govulncheck.sh  # lỗ hổng đã biết mà code gọi tới (cần mạng để tải govulncheck)
-go test -count=1 -race ./...   # chỉ test
+dz-gate --check deploy/gate.example.yaml   # cần DZ_API_KEY trong môi trường
 ```
 
-Không có CI chạy thật (workspace chốt 13/10): dán đầu ra `cong/kiem-kho.sh` vào PR.
+Không có CI chạy thật (workspace chốt 13/10): dán đầu ra ba cổng vào PR. Đổi/thêm ca ở meta = bump `cong/hop-dong-ghim.json` (SHA + số ca) CÙNG PR.
 
 ## Ranh giới
 
@@ -60,9 +67,11 @@ Không có CI chạy thật (workspace chốt 13/10): dán đầu ra `cong/kiem-
 - **Không log `customer_ref`/cookie/token/khoá**; lỗi trả ra không chứa chúng (dev hay dùng email làm ref).
 - **Fail-closed mặc định.** Chỉ lỗi mạng/timeout/5xx của hub mới được `stale_if_error`/`fail_mode: open` cứu; `401/403/404/429` luôn là `503`.
 - Hành vi lệch SDK = một trong hai mặt tiền sai: sửa ca ở meta trước, không "sửa runner cho khớp".
+- **Upstream tin `X-DZ-*`**: gate XOÁ mọi `X-DZ-*`, `X-Auth-Request-*`, `X-Forwarded-User` (+ `strip_incoming`) của client rồi mới tiêm. App của dev phải chỉ tới được qua gate (mạng nội bộ compose), nếu không header giả vẫn lọt.
 
 ## Cạm bẫy đã biết
 
 **Công khai — semver nghiêm** (khi repo công khai, sau E2E lát 2): chạy trên máy người khác, không ép cập nhật được.
-Hai chỗ SDK và gate có thể lệch nếu không canh bằng ca: (1) ngưỡng đệm URL phiên (`replace_after − 30 s`, hub cũ `expires_at − 11 phút`);
-(2) trần đọc tươi `checkout_session_id` đặt mốc cả khi đệm trống (README gate-v1 "Trần") — SDK hiện chỉ đặt khi đệm còn tươi.
+- Đệm URL phiên thanh toán: `replace_after − 30 s` (hub cũ `expires_at − 11 phút`). SDK và gate phải giống nhau (ca `checkout-url-cache-not-past-replace-after`).
+- "Đặt mốc trần đọc tươi" và "đăng ký lần gọi hub đang bay" phải nguyên tử (một lần giữ khoá ở `hub.Khach.Lay`); tách ra là race (ca `return-concurrent-*`).
+- `ReverseProxy` (Rewrite) bỏ tham số query không parse được (`;`) khỏi request tới upstream; quyết định tuyến chỉ dựa trên đường dẫn, không dựa query.

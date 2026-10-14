@@ -35,7 +35,10 @@ echo "go build: được"
 
 RA_FILE="$(mktemp)" || exit 2
 trap 'rm -f "$RA_FILE"' EXIT
-go test -race -count=1 -v ./... >"$RA_FILE" 2>&1
+# Bo ca conformance can kho meta nen chay RIENG (cong/kiem-conformance.sh, co ghim SHA); o day chi test cua chinh kho.
+GOI=$(go list ./... | grep -v '/internal/conformance$')
+# shellcheck disable=SC2086
+go test -race -count=1 -v $GOI >"$RA_FILE" 2>&1
 MA_GO=$?
 
 if ! grep -q '^=== RUN' "$RA_FILE"; then
