@@ -20,6 +20,12 @@ Trạng thái: đang xây (repo private tới khi E2E lát 2 xanh).
 - Khách quay về `success_path?checkout_session_id=<uuid>` → đọc tươi quyền (tối đa 1 lần / 5 s / khách), không bị đệm "chưa có quyền" giữ lại.
 - Hợp đồng đầy đủ: `../meta/contracts/conformance/gate-v1/README.md`.
 
+## Triển khai an toàn (BẮT BUỘC đọc)
+
+- **App của bạn chỉ được tới được QUA gate.** Upstream tin `X-DZ-*` (khách, gói, tính năng). Gate xoá mọi `X-DZ-*`, `X-Auth-Request-*`, `X-Forwarded-User` do client gửi rồi mới tiêm của mình, nhưng nếu app còn mở cổng ra ngoài song song (publish port, cổng LB khác, đường tắt nội bộ), kẻ tấn công gửi thẳng header giả vào app và gate không cứu được. Trong compose: `app` KHÔNG publish port, chỉ `dz-gate` publish; mạng nội bộ riêng.
+- **Cổng vận hành (`ops.listen`) bind riêng** (mặc định `127.0.0.1:9090`), không đưa ra Internet.
+- **`X-Forwarded-For` sau load balancer**: gate dựng `X-Forwarded-For`/`-Host`/`-Proto` từ KẾT NỐI TRỰC TIẾP, không tin giá trị client gửi — nên sau LB upstream thấy IP của LB. Follow-up (chưa làm): `trusted_proxies` để tin header của LB đã khai.
+
 ## Khai tuyến cho upstream Rails/Spring
 
 `/premium/*` KHÔNG khớp `/premium.json`, nhưng Rails (`(.:format)`) và Spring < 5.3 (suffix pattern) định tuyến `/premium.json` về handler của `/premium`. Khai `/premium*` (hoặc cả `/premium` lẫn `/premium.*`), hoặc `default_action: require` rồi liệt kê phần công khai bằng `allow`.

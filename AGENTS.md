@@ -77,3 +77,9 @@ Không có CI chạy thật (workspace chốt 13/10): dán đầu ra ba cổng v
 - Đệm URL phiên thanh toán: `replace_after − 30 s` (hub cũ `expires_at − 11 phút`). SDK và gate phải giống nhau (ca `checkout-url-cache-not-past-replace-after`).
 - "Đặt mốc trần đọc tươi" và "đăng ký lần gọi hub đang bay" phải nguyên tử (một lần giữ khoá ở `hub.Khach.Lay`); tách ra là race (ca `return-concurrent-*`).
 - `ReverseProxy` (Rewrite) bỏ tham số query không parse được (`;`) khỏi request tới upstream; quyết định tuyến chỉ dựa trên đường dẫn, không dựa query.
+
+## Việc để sau (follow-up có chủ)
+
+- `trusted_proxies` (tin `X-Forwarded-*` của LB đã khai) — hiện upstream sau LB thấy IP của LB. Chưa cần tới khi có người triển khai sau LB.
+- Tuỳ chọn tắt log đường dẫn (đường dẫn dạng `/invite/<token>` vẫn vào log).
+- Các mục THẤP L1–L5 của `reports/panel-261014-1030-gate1-sec.md` (`%00`/`%20` cuối đoạn, `e` JWK dài, cảnh báo `secret` viết thẳng, thông báo lộ upstream, lệch nhỏ SDK/gate khi chạm trần).
