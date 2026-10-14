@@ -11,7 +11,7 @@ Cổng paywall độc lập (reverse proxy Go) cho app có sẵn gắn thuê bao
 - Proxy: xoá header danh tính/quyền/nguồn gốc kết nối của client (tên chuẩn hoá `_`→`-`), bỏ header gạch dưới, tiêm `X-DZ-*`, `X-Forwarded-*` theo `public_origins`, giữ đường dẫn thô, WebSocket, 502 khi upstream chết, `/_dz/*` công khai ⇒ 404.
 - Vận hành: log JSON băm `customer_ref`, Prometheus, `/_dz/{healthz,readyz,metrics}` trên bind riêng, `--check`/`--healthcheck`/`--version`, tắt êm.
 - Đóng gói: `deploy/Dockerfile` (distroless nonroot, ≈ 9 MB, healthcheck exec), `deploy/compose.example.yml` (app không publish cổng, gate chỉ publish `127.0.0.1:8080`, `mem_limit`/`pids_limit`, mạng nội bộ), base image ghim digest, `deploy/gate.example.yaml`, `docs/{trien-khai,cau-hinh,ma-loi}.md`, cổng `cong/kiem-docker.sh`.
-- Cổng kho: `cong/kiem-kho.sh`, `cong/kiem-conformance.sh` (62 ca gate-v1, ghim SHA meta), `cong/kiem-govulncheck.sh`.
+- Cổng kho: `cong/kiem-kho.sh`, `cong/kiem-conformance.sh` (63 ca gate-v1, ghim SHA meta), `cong/kiem-govulncheck.sh`.
 
 ### Bảo mật
 - Danh tính không xác định ⇒ 503 + `Retry-After`, không bao giờ fail-open; hỏi lại sau 409 chịu trần, không xoá đệm quyền (không vòng đốt hạn mức khoá API); đệm âm JWKS.

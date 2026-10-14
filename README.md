@@ -7,7 +7,7 @@ Trạng thái: đang xây (repo private tới khi E2E lát 2 xanh).
 | | PR #1 | PR #2 (đây) | PR #3 |
 |---|---|---|---|
 | Khớp tuyến, danh tính (JWT+JWKS, session hook), client hub, lõi quyết định + paywall, cấu hình + kiểm luật | có | | |
-| Reverse proxy (xoá/tiêm header), `/_dz/healthz`/`readyz`/`metrics`, `cmd/dz-gate`, runner conformance (62 ca gate-v1) | | có | |
+| Reverse proxy (xoá/tiêm header), `/_dz/healthz`/`readyz`/`metrics`, `cmd/dz-gate`, runner conformance (63 ca gate-v1) | | có | |
 | Dockerfile, compose, tài liệu triển khai, `kiem-docker.sh` (forward-auth: chưa) | | | có (PR này) |
 
 ## Hành vi (tóm tắt)
@@ -28,6 +28,7 @@ Trạng thái: đang xây (repo private tới khi E2E lát 2 xanh).
 
 - **Header của client bị xoá/bỏ trước khi gate tự đặt**: ngoài `X-DZ-*`/`X-Auth-Request-*`/`X-Forwarded-User`, gate xoá `Forwarded`, `X-Forwarded-*` (mọi biến thể: -Port, -Prefix, -Ssl, -Scheme, -Server…), `X-Original-Forwarded-*`, `X-Real-IP`, `X-Client-IP`, `X-Cluster-Client-IP`, `True-Client-IP`, `CF-Connecting-IP`, `Fastly-Client-IP` (app tin chúng để dựng IP/URL/giới hạn tốc độ), rồi mới đặt `X-Forwarded-For/-Host/-Proto` từ kết nối thật. **Mọi header có `_` trong tên bị bỏ** (như nginx `underscores_in_headers off`); app thật sự cần thì khai `inject.allow_underscore_headers: true` (có cảnh báo; header danh tính gạch dưới vẫn bị xoá).
 - **Tên header chuẩn hoá khi xoá**: hạ chữ thường VÀ `_` → `-` (server CGI-style như Rack/PHP/WSGI cũ đọc `X_DZ_Customer_Ref` như `X-DZ-Customer-Ref`); áp cho cả `strip_incoming`.
+- **Header ghi đè phương thức** (`X-HTTP-Method-Override`, `X-HTTP-Method`, `X-Method-Override`) KHÔNG bị xoá mặc định: quyết định tuyến của gate không phụ thuộc phương thức và xoá có thể làm vỡ API hợp lệ. Gate coi request là phương thức thật của kết nối, còn app có thể chạy phương thức khác: app tự quyết, không dùng thì thêm các tên này vào `inject.strip_incoming`.
 - **`X-Forwarded-Host`/`-Proto` chỉ theo `paywall.public_origins`**: Host của client khớp một origin thì dùng origin đó, không khớp thì dùng origin ĐẦU; scheme là của origin (gate nghe HTTP sau bộ kết thúc TLS). App nhiều domain phải khai đủ domain trong `public_origins` (cần cho `success_url` rồi). So khớp theo `host[:port]` chữ thường, nguyên văn.
 - **`/_dz/*` ở mặt công khai ⇒ gate tự trả 404**, không chuyển tới app (cổng vận hành chỉ ở `ops.listen`). `ops.listen` mặc định `127.0.0.1`: nếu Prometheus ở container khác phải đổi sang địa chỉ mạng nội bộ — không bao giờ `0.0.0.0` trên mạng công cộng.
 - **`Host` gửi upstream là host của upstream** (không phải Host gốc của client): app định tuyến theo vhost cần biết điều này; Host gốc đã được xác thực nằm ở `X-Forwarded-Host`.
@@ -45,7 +46,7 @@ Trạng thái: đang xây (repo private tới khi E2E lát 2 xanh).
 
 ```bash
 bash cong/kiem-kho.sh          # gofmt · vet · build · test -race (0 bỏ qua)
-bash cong/kiem-conformance.sh  # 62 ca gate-v1 của meta, ghim SHA
+bash cong/kiem-conformance.sh  # 63 ca gate-v1 của meta, ghim SHA
 bash cong/kiem-docker.sh       # build image thật + chạy + request qua cổng (cần docker)
 bash cong/kiem-govulncheck.sh
 ```

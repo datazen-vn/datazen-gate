@@ -89,7 +89,7 @@ Upstream Rails/Spring cũ: `/premium/*` KHÔNG khớp `/premium.json`; khai `/pr
 
 ## `inject`
 
-- `strip_incoming`: tên header (chữ thường, glob `*`) cần xoá thêm khỏi request đến.
+- `strip_incoming`: tên header (chữ thường, glob `*`) cần xoá thêm khỏi request đến. Ví dụ app có hỗ trợ ghi đè phương thức (`X-HTTP-Method-Override`, `X-HTTP-Method`, `X-Method-Override`) mà không dùng: thêm vào đây (mặc định gate không xoá vì có thể làm vỡ API hợp lệ).
 - `allow_underscore_headers` (`false`): mặc định gate BỎ mọi header có `_` trong tên của client. Bật chỉ khi app thật sự cần (có cảnh báo).
 - Luôn xoá (không cấu hình được): `x-dz-*`, `x-auth-request-*`, `x-forwarded-user`, `forwarded`, `x-forwarded-*`, `x-original-forwarded-*`, `x-real-ip`, `x-client-ip`, `x-cluster-client-ip`, `true-client-ip`, `cf-connecting-ip`, `fastly-client-ip`, `fly-client-ip`, `client-ip`, `x-originating-ip`, `x-remote-ip`, `x-remote-addr`; header ghi đè đường dẫn/host `x-original-url`, `x-rewrite-url`, `x-original-uri`, `x-original-host`, `x-host`, `x-http-host-override`. Tên được chuẩn hoá (`_` → `-`, chữ thường) trước khi so.
 
