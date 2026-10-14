@@ -39,7 +39,7 @@ type KetQua struct {
 	Nguon string
 }
 
-// cách lấy quyền: theo bản đệm; tươi (khách quay về sau thanh toán); hỏi lại (hub báo đã có thuê bao active ⇒ hỏi lại sau Huy).
+// cách lấy quyền: theo bản đệm; tươi (khách quay về sau thanh toán); hỏi lại (hub báo đã có thuê bao active ⇒ đọc tươi, cùng trần với tươi).
 type cachLay int
 
 const (
@@ -93,9 +93,10 @@ func (c *Cong) XuLy(ctx context.Context, r *http.Request) KetQua {
 		return pass(dau.quyet, dau.nguon)
 	}
 	pt := c.tuChoi(ctx, r, dau.quyet, route)
-	if pt.xungDot && dau.quyet.LyDo == LyDoKhongCoQuyen {
-		// Hub nói khách ĐÃ có thuê bao active cùng gói nhưng bản đệm của ta nói chưa: bản đệm cũ. Hỏi lại hub đúng một lần.
-		c.Quyen.Huy(dau.quyet.MaKhach)
+	if pt.xungDot && dau.quyet.LyDo == LyDoKhongCoQuyen && dau.quyet.KetQua != nil && !dau.quyet.KetQua.HieuLuc {
+		// Hub nói khách ĐÃ có thuê bao active cùng gói nhưng bản đệm của ta nói KHÔNG hiệu lực: bản đệm cũ. Hỏi lại = đọc tươi: chịu
+		// trần 1 lần / 5 giây / khách và KHÔNG xoá bản đệm quyền (xoá + hỏi lại mỗi request là vòng gọi hub theo đúng tốc độ request của
+		// một khách, đốt hạn mức khoá API — panel an ninh C1). Khách đã hiệu lực thì không bao giờ tới đây (tuChoi không tạo phiên).
 		lai := c.danhGia(ctx, r, route, layHoiLai)
 		if lai.quyet.Cho {
 			return pass(lai.quyet, lai.nguon)
@@ -133,14 +134,17 @@ func (c *Cong) danhGia(ctx context.Context, r *http.Request, route Route, cach c
 		}
 		return luot{quyet: Quyet{LyDo: LyDoKhongDanhTinh, Status: http.StatusUnauthorized}}
 	case danhtinh.KhongBiet:
-		if route.Mem || cheDo == "open" {
+		// Danh tính KHÔNG xác định được ⇒ KHÔNG BAO GIỜ cho qua ẩn danh trên tuyến cần quyền, kể cả fail_mode open: kẻ tấn công tự gây được
+		// lỗi danh tính (cookie dị dạng làm /api/me ném 500, hoặc chậm quá timeout) nên đó là "nút mở cổng". fail_mode chỉ áp cho hub
+		// entitlements lỗi. Tuyến soft không bao giờ chặn nên vẫn qua (README gate-v1, ca identity-unavailable-never-fail-open).
+		if route.Mem {
 			return luot{quyet: ChoQuaAnDanh(), nguon: hub.NguonMoCua}
 		}
 		return luot{quyet: Quyet{LyDo: LyDoKhongSan, Status: http.StatusServiceUnavailable, Tu: TuDanhTinh, Loi: ket.Loi}}
 	}
 
 	ma := ket.MaKhach
-	kq, err := c.Quyen.Lay(ctx, ma, hub.YeuCau{TinhNang: route.TinhNang, CheDoLoi: cheDo, Tuoi: cach == layTuoi})
+	kq, err := c.Quyen.Lay(ctx, ma, hub.YeuCau{TinhNang: route.TinhNang, CheDoLoi: cheDo, Tuoi: cach != layDem})
 	if err != nil {
 		c.baoLoi(err)
 		if route.Mem {
