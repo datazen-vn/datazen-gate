@@ -81,9 +81,13 @@ type SoGoi struct {
 }
 
 type Expect struct {
-	Decision               QuyetKy           `json:"decision"`
-	Response               *PhanHoiKy        `json:"response"`
-	UpstreamCalled         *bool             `json:"upstream_called"`
+	Decision       QuyetKy    `json:"decision"`
+	Response       *PhanHoiKy `json:"response"`
+	UpstreamCalled *bool      `json:"upstream_called"`
+	// UpstreamCalledTheoMatTien: kỳ vọng RIÊNG từng mặt tiền (khác biệt có chủ ý, vd `/_dz/*`); runner Go đọc `gate`.
+	UpstreamCalledTheoMatTien *struct {
+		Gate *bool `json:"gate"`
+	} `json:"upstream_called_theo_mat_tien"`
 	UpstreamRequestHeaders map[string]string `json:"upstream_request_headers"`
 	HubCalls               *SoGoi            `json:"hub_calls"`
 	HubRequestHeaders      map[string]string `json:"hub_request_headers"`

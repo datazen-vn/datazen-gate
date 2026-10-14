@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/datazen-vn/market-gate/internal/cauhinh"
 	"github.com/datazen-vn/market-gate/internal/hub"
 	"github.com/datazen-vn/market-gate/internal/quyetdinh"
 )
@@ -22,7 +23,8 @@ type congGia func(r *http.Request) quyetdinh.KetQua
 
 func (f congGia) XuLy(_ context.Context, r *http.Request) quyetdinh.KetQua { return f(r) }
 
-var xoaMacDinh = []string{"x-dz-*", "x-auth-request-*", "x-forwarded-user"}
+// Dùng ĐÚNG danh sách mặc định của sản phẩm (cauhinh.XoaMacDinh), không bản sao riêng.
+var xoaMacDinh = cauhinh.XoaMacDinh
 
 func choQua(ma string, e *hub.KetQua) congGia {
 	return func(*http.Request) quyetdinh.KetQua {
@@ -263,6 +265,39 @@ func TestXForwardedDungKetNoiThatKhongTinClient(t *testing.T) {
 	}
 }
 
+// TB-4a: header ghi đè đường dẫn/host làm app chạy đường khác đường gate đã xét (GET /public + X-Original-URL: /premium/x).
+func TestHeaderGhiDeDuongDanVaNguonGocBiXoaQuaProxyThat(t *testing.T) {
+	u := moiUpstream(t, nil)
+	s := dungProxy(t, u, choQua("c", nil), nil)
+	spoof := map[string]string{
+		"X-Original-URL": "/premium/x", "X-Rewrite-URL": "/premium/x", "X-Original-URI": "/premium/x", "X-Original-Host": "noi-bo.test",
+		"X-Host": "noi-bo.test", "X-HTTP-Host-Override": "noi-bo.test", "Client-IP": "6.6.6.6", "X-Originating-IP": "6.6.6.6",
+		"Fly-Client-IP": "6.6.6.6", "X-Remote-IP": "6.6.6.6", "X-Remote-Addr": "6.6.6.6",
+	}
+	req, _ := http.NewRequest("GET", s.URL+"/public", nil)
+	for k, v := range spoof {
+		req.Header.Set(k, v)
+	}
+	req.Header.Set("X-Giu-Nguyen", "ok")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	got := u.cuoi(t)
+	if got.RequestURI != "/public" {
+		t.Fatalf("upstream phải nhận đúng đường dẫn gate đã xét: %q", got.RequestURI)
+	}
+	for k := range spoof {
+		if got.Header.Get(k) != "" {
+			t.Errorf("%s lọt tới upstream: %q", k, got.Header.Get(k))
+		}
+	}
+	if got.Header.Get("X-Giu-Nguyen") != "ok" {
+		t.Fatalf("header thường phải giữ: %v", got.Header)
+	}
+}
+
 func TestGiuNguyenDuongDanThoVaQuery(t *testing.T) {
 	// Gate quyết định theo đường dẫn THÔ; upstream phải nhận ĐÚNG đường dẫn đó (không bị chuẩn hoá) để hai bên nhìn cùng một thứ.
 	u := moiUpstream(t, nil)
@@ -474,5 +509,83 @@ func TestVungDZTrenCongCongKhaiTra404KhongProxy(t *testing.T) {
 		if got := guiTho(t, strings.TrimPrefix(s.URL, "http://"), "GET "+p+" HTTP/1.1\r\nHost: a\r\nConnection: close\r\n\r\n"); !strings.HasPrefix(got, "HTTP/1.1 200") {
 			t.Errorf("%s phải tới app: %.60q", p, got)
 		}
+	}
+}
+
+func TestHeaderNguonGocCuaClientBiXoaTruocKhiGateTuDat(t *testing.T) {
+	u := moiUpstream(t, nil)
+	s := dungProxy(t, u, choQua("c", nil), func(c *Cau) { c.CongKhai = []Origin{{Scheme: "https", Host: "app.test"}} })
+	req, _ := http.NewRequest("GET", s.URL+"/x", nil)
+	gia := map[string]string{
+		"Forwarded": "for=6.6.6.6;host=evil.test", "X-Forwarded-Port": "1337", "X-Forwarded-Prefix": "/evil", "X-Forwarded-Ssl": "on",
+		"X-Forwarded-Scheme": "gopher", "X-Forwarded-Server": "evil", "X-Forwarded-Bat-Ky": "x", "X-Original-Forwarded-For": "6.6.6.6",
+		"X-Real-IP": "6.6.6.6", "True-Client-IP": "6.6.6.6", "CF-Connecting-IP": "6.6.6.6", "X-Client-IP": "6.6.6.6",
+		"X-Cluster-Client-IP": "6.6.6.6", "Fastly-Client-IP": "6.6.6.6", "X-Forwarded-For": "6.6.6.6", "X-Forwarded-Host": "evil.test", "X-Forwarded-Proto": "gopher",
+	}
+	for k, v := range gia {
+		req.Header.Set(k, v)
+	}
+	req.Header.Set("X-Giu-Nguyen", "ok")
+	if _, err := http.DefaultClient.Do(req); err != nil {
+		t.Fatal(err)
+	}
+	got := u.cuoi(t).Header
+	for k := range gia {
+		switch k {
+		case "X-Forwarded-For", "X-Forwarded-Host", "X-Forwarded-Proto":
+			continue // do GATE tự đặt (kiểm bên dưới)
+		}
+		if got.Get(k) != "" {
+			t.Errorf("%s của client lọt tới upstream: %q", k, got.Get(k))
+		}
+	}
+	// ...nhưng X-Forwarded-* do chính gate đặt (từ kết nối thật + public_origins) phải CÒN: xoá nhầm sau khi đặt là lỗi thứ tự.
+	if got.Get("X-Forwarded-For") != "127.0.0.1" || got.Get("X-Forwarded-Host") != "app.test" || got.Get("X-Forwarded-Proto") != "https" {
+		t.Fatalf("X-Forwarded-* của gate: %v", got)
+	}
+	if got.Get("X-Giu-Nguyen") != "ok" {
+		t.Fatal("header thường giữ")
+	}
+}
+
+func TestHeaderGachDuoiMacDinhBiBoHet(t *testing.T) {
+	u := moiUpstream(t, nil)
+	s := dungProxy(t, u, choQua("c", nil), nil)
+	req, _ := http.NewRequest("GET", s.URL+"/x", nil)
+	for k, v := range map[string]string{"X_Custom": "1", "X-App_Thing": "2", "Is_Admin": "true", "X_DZ_Customer_Ref": "admin"} {
+		req.Header.Set(k, v)
+	}
+	req.Header.Set("X-Giu-Nguyen", "ok")
+	_, _ = http.DefaultClient.Do(req)
+	got := u.cuoi(t).Header
+	for _, k := range []string{"X_Custom", "X-App_Thing", "Is_Admin", "X_DZ_Customer_Ref"} {
+		if got.Get(k) != "" {
+			t.Errorf("header gạch dưới %s lọt qua: %q", k, got.Get(k))
+		}
+	}
+	for k := range got {
+		if strings.Contains(k, "_") {
+			t.Errorf("upstream nhận header có `_`: %q", k)
+		}
+	}
+	if got.Get("X-Giu-Nguyen") != "ok" {
+		t.Fatal("header thường giữ")
+	}
+}
+
+func TestChoPhepHeaderGachDuoiVanXoaHeaderDanhTinh(t *testing.T) {
+	u := moiUpstream(t, nil)
+	s := dungProxy(t, u, choQua("cus_that", nil), func(c *Cau) { c.GiuGachDuoi = true })
+	req, _ := http.NewRequest("GET", s.URL+"/x", nil)
+	req.Header.Set("X_Custom", "1")
+	req.Header.Set("X_DZ_Customer_Ref", "admin")
+	req.Header.Set("X_Forwarded_User", "root")
+	_, _ = http.DefaultClient.Do(req)
+	got := u.cuoi(t).Header
+	if got.Get("X_Custom") != "1" {
+		t.Fatalf("khai cho phép ⇒ giữ X_Custom: %v", got)
+	}
+	if got.Get("X_DZ_Customer_Ref") != "" || got.Get("X_Forwarded_User") != "" || got.Get("X-DZ-Customer-Ref") != "cus_that" {
+		t.Fatalf("header danh tính gạch dưới vẫn phải bị xoá, chỉ còn giá trị của gate: %v", got)
 	}
 }
