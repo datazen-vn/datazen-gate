@@ -56,7 +56,7 @@ Go 1.26.9 (`go.mod`).
 ```bash
 bash cong/kiem-kho.sh          # gofmt · vet · build · test -race, 0 ca bỏ qua (trừ conformance). Mã thoát 0 đạt · 1 trượt · 2 không kiểm được
 bash cong/kiem-conformance.sh  # 62 ca gate-v1 của meta qua proxy thật, 0 skip, -race, ghim SHA meta (DZ_META_DIR hoặc ../meta)
-bash cong/kiem-docker.sh       # build image thật (distroless nonroot < 15 MB), chạy read-only, request qua cổng, compose mẫu đúng luật (cần docker)
+bash cong/kiem-docker.sh       # build image thật (distroless nonroot < 15 MB), chạy read-only, request qua cổng, compose mẫu đúng luật (app không publish, gate chỉ publish loopback, có giới hạn tài nguyên), FROM ghim digest (cần docker)
 bash cong/kiem-govulncheck.sh  # lỗ hổng đã biết mà code gọi tới (cần mạng để tải govulncheck)
 dz-gate --check deploy/gate.example.yaml   # cần DZ_API_KEY trong môi trường
 ```
@@ -71,7 +71,7 @@ Không có CI chạy thật (workspace chốt 13/10): dán đầu ra ba cổng v
 - Hành vi lệch SDK = một trong hai mặt tiền sai: sửa ca ở meta trước, không "sửa runner cho khớp".
 - **Danh tính không xác định ⇒ không bao giờ fail-open** (503 + Retry-After). `fail_mode` chỉ áp cho hub entitlements lỗi.
 - **Không vòng 409**: khách `active` cùng gói thiếu feature ⇒ 402 không tạo phiên; hỏi lại sau 409 là đọc tươi chịu trần, không xoá đệm quyền (panel an ninh gate#1 C1).
-- **Upstream tin `X-DZ-*`**: gate XOÁ mọi `X-DZ-*`, `X-Auth-Request-*`, `X-Forwarded-User` (+ `strip_incoming`) của client rồi mới tiêm. App của dev phải chỉ tới được qua gate (mạng nội bộ compose), nếu không header giả vẫn lọt.
+- **Upstream tin `X-DZ-*`**: gate XOÁ mọi `X-DZ-*`, `X-Auth-Request-*`, `X-Forwarded-User`, nhóm nguồn gốc/IP, header ghi đè đường dẫn/host như `X-Original-URL` (`cauhinh.XoaMacDinh`, + `strip_incoming`) của client rồi mới tiêm. App của dev phải chỉ tới được qua gate (mạng nội bộ compose), nếu không header giả vẫn lọt.
 
 ## Cạm bẫy đã biết
 
