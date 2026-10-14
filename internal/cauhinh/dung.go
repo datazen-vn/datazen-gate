@@ -12,8 +12,16 @@ import (
 	"github.com/datazen-vn/market-gate/internal/tuyen"
 )
 
-// XoaMacDinh: header luôn bị xoá khỏi yêu cầu đến, kể cả khi dev không khai strip_incoming.
-var XoaMacDinh = []string{"x-dz-*", "x-auth-request-*", "x-forwarded-user"}
+// XoaMacDinh: header luôn bị xoá khỏi yêu cầu đến, kể cả khi dev không khai strip_incoming. Hai nhóm:
+//   - danh tính/quyền (`x-dz-*`, `x-auth-request-*`, `x-forwarded-user`): upstream tin chúng;
+//   - nguồn gốc kết nối do client tự khai (`forwarded`, `x-forwarded-*` MỌI biến thể kể cả -port/-prefix/-ssl/-scheme/-server, `x-real-ip`,
+//     `true-client-ip`, `cf-connecting-ip`…): app tin chúng để dựng IP/URL/ratelimit. Gate xoá TRƯỚC rồi mới tự đặt X-Forwarded-For/-Host/
+//     -Proto từ kết nối thật (không tin LB: xem follow-up `trusted_proxies`).
+var XoaMacDinh = []string{
+	"x-dz-*", "x-auth-request-*", "x-forwarded-user",
+	"forwarded", "x-forwarded-*", "x-original-forwarded-*", "x-real-ip", "x-client-ip", "x-cluster-client-ip",
+	"true-client-ip", "cf-connecting-ip", "fastly-client-ip",
+}
 
 // XoaHeader trả toàn bộ mẫu header cần xoá khỏi yêu cầu đến (mặc định + strip_incoming).
 func (c *Config) XoaHeader() []string {

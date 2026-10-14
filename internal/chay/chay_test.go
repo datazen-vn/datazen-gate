@@ -288,3 +288,31 @@ func TestLapNoiPublicOriginsVaoXForwardedHostVaVungDZ(t *testing.T) {
 		t.Fatalf("/_dz/* ở mặt công khai ⇒ 404, không tới app: %d", res.StatusCode)
 	}
 }
+
+func TestLapNoiAllowUnderscoreHeaders(t *testing.T) {
+	for _, cho := range []bool{false, true} {
+		var nhan http.Header
+		up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { nhan = r.Header.Clone() }))
+		cfg, _ := cauhinh.Doc(strings.NewReader(`{
+		  "gate": {"listen": ":18083", "upstream": "` + up.URL + `"}, "hub": {"base_url": "http://127.0.0.1:1"},
+		  "routes": [{"match": "/dashboard/*", "action": "require"}], "inject": {"allow_underscore_headers": ` + map[bool]string{true: "true", false: "false"}[cho] + `},
+		  "paywall": {"plan_code": "pro", "public_origins": ["https://app.test"]}}`))
+		cfg.MacDinh()
+		cfg.Identity = []cauhinh.Identity{{Type: "jwt", Secret: strings.Repeat("s", 32), Issuer: "i", Audience: "a"}}
+		d, err := Lap(cfg, TuyChon{Env: envOK, PhienBan: "t"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := httptest.NewServer(d.Chinh)
+		req, _ := http.NewRequest("GET", s.URL+"/mo", nil)
+		req.Header.Set("X_Custom", "1")
+		req.Header.Set("X_DZ_Customer_Ref", "admin")
+		res, _ := http.DefaultClient.Do(req)
+		res.Body.Close()
+		s.Close()
+		up.Close()
+		if (nhan.Get("X_Custom") == "1") != cho || nhan.Get("X_DZ_Customer_Ref") != "" {
+			t.Errorf("allow_underscore_headers=%v: %v", cho, nhan)
+		}
+	}
+}

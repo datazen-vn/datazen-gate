@@ -219,7 +219,37 @@ func contains(ds []string, s string) bool {
 func TestXoaHeader(t *testing.T) {
 	c := docMau(t)
 	got := c.XoaHeader()
-	if len(got) != 4 || got[0] != "x-dz-*" || got[1] != "x-auth-request-*" || got[2] != "x-forwarded-user" || got[3] != "x-dz-*" {
-		t.Fatalf("%v", got)
+	if len(got) != len(XoaMacDinh)+1 || got[len(got)-1] != "x-dz-*" {
+		t.Fatalf("mặc định + strip_incoming của mẫu: %v", got)
+	}
+	// Mặc định PHẢI phủ nhóm danh tính/quyền và nhóm "nguồn gốc kết nối do client khai".
+	for _, m := range []string{"x-dz-*", "x-auth-request-*", "x-forwarded-user", "forwarded", "x-forwarded-*", "x-real-ip", "true-client-ip", "cf-connecting-ip"} {
+		co := false
+		for _, d := range XoaMacDinh {
+			if d == m {
+				co = true
+			}
+		}
+		if !co {
+			t.Errorf("XoaMacDinh thiếu %q", m)
+		}
+	}
+}
+
+func TestCanhBaoChoPhepHeaderGachDuoi(t *testing.T) {
+	c := docMau(t)
+	c.Inject.AllowUnderscoreHeaders = true
+	kq := Kiem(c, envTest)
+	if !kq.HopLe() {
+		t.Fatal("chỉ cảnh báo, không lỗi")
+	}
+	co := false
+	for _, v := range kq.Cac {
+		if v.Muc == MucCanhBao && v.Truong == "inject.allow_underscore_headers" {
+			co = true
+		}
+	}
+	if !co {
+		t.Fatalf("phải cảnh báo: %v", kq.Cac)
 	}
 }

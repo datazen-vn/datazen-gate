@@ -104,9 +104,13 @@ type Paywall struct {
 	CancelPath    string   `yaml:"cancel_path"`
 }
 
-// Inject: header bổ sung cần xoá khỏi yêu cầu đến (ngoài x-dz-*, x-auth-request-*, x-forwarded-user luôn xoá).
+// Inject: header bổ sung cần xoá khỏi yêu cầu đến (ngoài danh sách luôn xoá, xem XoaMacDinh).
 type Inject struct {
-	StripIncoming []string `yaml:"strip_incoming"`
+	// AllowUnderscoreHeaders: mặc định (false) gate BỎ mọi header có `_` trong tên từ client (như nginx `underscores_in_headers off`):
+	// Rack/PHP/WSGI/CGI đổi `_` thành `-` nên `X_Custom` giả được `X-Custom`. true chỉ khi app thật sự cần header gạch dưới; header danh tính
+	// (`X_DZ_*`…) vẫn bị xoá theo tên đã chuẩn hoá.
+	AllowUnderscoreHeaders bool     `yaml:"allow_underscore_headers"`
+	StripIncoming          []string `yaml:"strip_incoming"`
 }
 
 // Ops: cổng vận hành (healthz/readyz/metrics) trên bind riêng.
