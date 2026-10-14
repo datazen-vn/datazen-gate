@@ -265,6 +265,39 @@ func TestXForwardedDungKetNoiThatKhongTinClient(t *testing.T) {
 	}
 }
 
+// TB-4a: header ghi đè đường dẫn/host làm app chạy đường khác đường gate đã xét (GET /public + X-Original-URL: /premium/x).
+func TestHeaderGhiDeDuongDanVaNguonGocBiXoaQuaProxyThat(t *testing.T) {
+	u := moiUpstream(t, nil)
+	s := dungProxy(t, u, choQua("c", nil), nil)
+	spoof := map[string]string{
+		"X-Original-URL": "/premium/x", "X-Rewrite-URL": "/premium/x", "X-Original-URI": "/premium/x", "X-Original-Host": "noi-bo.test",
+		"X-Host": "noi-bo.test", "X-HTTP-Host-Override": "noi-bo.test", "Client-IP": "6.6.6.6", "X-Originating-IP": "6.6.6.6",
+		"Fly-Client-IP": "6.6.6.6", "X-Remote-IP": "6.6.6.6", "X-Remote-Addr": "6.6.6.6",
+	}
+	req, _ := http.NewRequest("GET", s.URL+"/public", nil)
+	for k, v := range spoof {
+		req.Header.Set(k, v)
+	}
+	req.Header.Set("X-Giu-Nguyen", "ok")
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	got := u.cuoi(t)
+	if got.RequestURI != "/public" {
+		t.Fatalf("upstream phải nhận đúng đường dẫn gate đã xét: %q", got.RequestURI)
+	}
+	for k := range spoof {
+		if got.Header.Get(k) != "" {
+			t.Errorf("%s lọt tới upstream: %q", k, got.Header.Get(k))
+		}
+	}
+	if got.Header.Get("X-Giu-Nguyen") != "ok" {
+		t.Fatalf("header thường phải giữ: %v", got.Header)
+	}
+}
+
 func TestGiuNguyenDuongDanThoVaQuery(t *testing.T) {
 	// Gate quyết định theo đường dẫn THÔ; upstream phải nhận ĐÚNG đường dẫn đó (không bị chuẩn hoá) để hai bên nhìn cùng một thứ.
 	u := moiUpstream(t, nil)

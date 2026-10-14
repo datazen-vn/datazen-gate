@@ -223,7 +223,8 @@ func TestXoaHeader(t *testing.T) {
 		t.Fatalf("mặc định + strip_incoming của mẫu: %v", got)
 	}
 	// Mặc định PHẢI phủ nhóm danh tính/quyền và nhóm "nguồn gốc kết nối do client khai".
-	for _, m := range []string{"x-dz-*", "x-auth-request-*", "x-forwarded-user", "forwarded", "x-forwarded-*", "x-real-ip", "true-client-ip", "cf-connecting-ip"} {
+	for _, m := range []string{"x-dz-*", "x-auth-request-*", "x-forwarded-user", "forwarded", "x-forwarded-*", "x-real-ip", "true-client-ip", "cf-connecting-ip",
+		"x-original-url", "x-rewrite-url", "x-original-uri", "x-original-host", "client-ip", "x-originating-ip", "x-host", "fly-client-ip"} {
 		co := false
 		for _, d := range XoaMacDinh {
 			if d == m {
