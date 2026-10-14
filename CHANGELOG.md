@@ -14,6 +14,7 @@ Cổng paywall độc lập (reverse proxy Go) cho app có sẵn gắn thuê bao
 - Cổng kho: `cong/kiem-kho.sh`, `cong/kiem-conformance.sh` (63 ca gate-v1, ghim SHA meta), `cong/kiem-govulncheck.sh`.
 
 ### Bảo mật
+- `--check` cảnh báo `secret` viết thẳng trong YAML và `ops.listen` không phải loopback. Khoá API đọc được từ tệp (`DZ_API_KEY_FILE`, tệp thường ≤ 4 KiB, cảnh báo nếu quyền rộng hơn 0600; đặt cả biến và tệp là lỗi).
 - Danh tính không xác định ⇒ 503 + `Retry-After`, không bao giờ fail-open; hỏi lại sau 409 chịu trần, không xoá đệm quyền (không vòng đốt hạn mức khoá API); đệm âm JWKS.
 
 ### Chưa có

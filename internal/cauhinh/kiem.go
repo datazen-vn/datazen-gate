@@ -118,6 +118,15 @@ func gateTuTroVaoMinh(listenHost, listenPort string, up *url.URL) bool {
 	return strings.EqualFold(up.Hostname(), listenHost) || (local(listenHost) && local(up.Hostname()))
 }
 
+// laLoopback: `localhost` hoặc địa chỉ IP loopback. Host trống/0.0.0.0/:: (mọi giao diện) và tên miền khác đều KHÔNG.
+func laLoopback(host string) bool {
+	if strings.EqualFold(host, "localhost") {
+		return true
+	}
+	ip := net.ParseIP(strings.Trim(host, "[]"))
+	return ip != nil && ip.IsLoopback()
+}
+
 func tachDiaChi(s string) (host, port string, ok bool) {
 	h, p, err := net.SplitHostPort(s)
 	if err != nil {
@@ -154,10 +163,15 @@ func kiemHub(k *KetQuaKiem, c *Config, env Env) {
 		k.loi("hub.api_key_env", "phải là tên biến môi trường hợp lệ, nhận %q", h.APIKeyEnv)
 		return
 	}
-	khoa, co := env(h.APIKeyEnv)
+	khoa, co, canhTep, err := c.KhoaAPI(env)
+	for _, m := range canhTep {
+		k.canh("hub.api_key_env", "%s", m)
+	}
 	switch {
-	case !co || strings.TrimSpace(khoa) == "":
-		k.loi("hub.api_key_env", "biến môi trường %s chưa đặt (khoá API dz_test_… / dz_live_…)", h.APIKeyEnv)
+	case err != nil:
+		k.loi("hub.api_key_env", "%v", err)
+	case !co:
+		k.loi("hub.api_key_env", "biến môi trường %s (hoặc %s_FILE trỏ tới tệp chứa khoá) chưa đặt (khoá API dz_test_… / dz_live_…)", h.APIKeyEnv, h.APIKeyEnv)
 	case !strings.HasPrefix(khoa, "dz_test_") && !strings.HasPrefix(khoa, "dz_live_"):
 		k.loi("hub.api_key_env", "khoá trong %s phải bắt đầu bằng dz_test_ hoặc dz_live_", h.APIKeyEnv)
 	case len(khoa) <= len("dz_test_"):
@@ -185,10 +199,12 @@ func kiemInjectOps(k *KetQuaKiem, c *Config) {
 			k.loi(fmt.Sprintf("inject.strip_incoming[%d]", i), "phải khớp ^[a-z0-9*-]{1,64}$ (tên header chữ thường, glob `*`), nhận %q", p)
 		}
 	}
-	if _, _, ok := tachDiaChi(c.Ops.Listen); !ok {
+	if host, _, ok := tachDiaChi(c.Ops.Listen); !ok {
 		k.loi("ops.listen", "phải dạng host:port (vd \"127.0.0.1:9090\"), nhận %q", c.Ops.Listen)
 	} else if c.Ops.Listen == c.Gate.Listen {
 		k.loi("ops.listen", "trùng gate.listen (%s): cổng vận hành phải bind riêng", c.Gate.Listen)
+	} else if !laLoopback(host) {
+		k.canh("ops.listen", "%q không phải loopback: metrics/readyz mở cho mọi thứ tới được địa chỉ đó (trong docker, 0.0.0.0 bind cả mạng nội bộ lẫn mạng ngoài); giữ 127.0.0.1 và không publish cổng này", c.Ops.Listen)
 	}
 	if c.Ops.LogCustomerRef != "hash" && c.Ops.LogCustomerRef != "none" {
 		k.loi("ops.log_customer_ref", "phải là hash hoặc none (không bao giờ log customer_ref thô), nhận %q", c.Ops.LogCustomerRef)

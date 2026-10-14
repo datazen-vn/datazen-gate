@@ -26,13 +26,13 @@ Tệp gắn vào container phải **đọc được bởi uid 65532** (nonroot) 
 | Trường | Mặc định | Luật |
 |---|---|---|
 | `base_url` | `https://api.datazen.vn` | https; `http` chỉ cho `localhost:<cổng>`/`127.0.0.1:<cổng>` (có cổng); không `user:password` |
-| `api_key_env` | `DZ_API_KEY` | tên biến môi trường; giá trị phải bắt đầu `dz_test_` hoặc `dz_live_` |
+| `api_key_env` | `DZ_API_KEY` | tên biến môi trường; giá trị phải bắt đầu `dz_test_` hoặc `dz_live_`. Thay vào đó có thể đặt `<tên>_FILE` (mặc định `DZ_API_KEY_FILE`) = đường dẫn tệp chứa khoá (Docker/Kubernetes secrets, không hiện ra ở `docker inspect`): tệp thường ≤ 4 KiB, xuống dòng cuối được cắt. Đặt CẢ HAI là lỗi. Quyền rộng hơn 0600 (nhóm/người khác đọc được) là cảnh báo, đặt 0400 |
 | `cache_ttl` | `60s` | `0s` = tắt đệm; tối đa `10m`. Quyền KHÔNG có (none/expired/cancelled/lạ) chỉ đệm tối đa 15 s dù TTL dài hơn |
 | `stale_if_error` | `0s` (tắt) | tối đa `1h`; cần `cache_ttl > 0`; chỉ cứu lỗi mạng/timeout/5xx; không bao giờ vượt `current_period_end`/`grace_until` của bản đệm |
 | `fail_mode` | `closed` | `closed`: hub lỗi ⇒ 503. `open`: cho qua (header `X-DZ-Entitlement-Source: fail-open`), chỉ với lỗi mạng/timeout/5xx. **401/403/404/429 của hub luôn 503**, kể cả `open` |
 | `timeout` | `5s` | (0, 60s] |
 
-Cảnh báo: khoá `dz_live_` + `fail_mode: open` (toàn cục hoặc tuyến): hub không trả lời thì tuyến trả phí mở cửa miễn phí.
+Cảnh báo: tệp khoá quyền rộng hơn 0600; khoá `dz_live_` + `fail_mode: open` (toàn cục hoặc tuyến): hub không trả lời thì tuyến trả phí mở cửa miễn phí.
 
 ## `identity` (1–8 resolver, thử lần lượt)
 
@@ -43,6 +43,7 @@ Resolver đầu nhận ra khách ⇒ dừng. Token sai/hết hạn = "không nh�
 | Trường | Mặc định | Luật |
 |---|---|---|
 | `jwks_url` **hoặc** `secret`/`secret_env` | — | đúng MỘT. `jwks_url`: https (hoặc loopback có cổng). `secret` ≥ 32 byte, HS*; **ưu tiên `secret_env`** (`secret` viết thẳng chỉ để thử) |
+| `secret` viết thẳng | — | cảnh báo: ai đọc được tệp cấu hình/bản sao lưu/git đều thấy; dùng `secret_env` |
 | `issuer`, `audience` | (không) | NÊN đặt: không đặt thì token của mọi bên cùng ký bằng khoá này đều qua (cảnh báo) |
 | `subject_claim` | `sub` | `[A-Za-z0-9_.-]{1,64}`; giá trị chuỗi hoặc số nguyên an toàn |
 | `algorithms` | HS256 (secret) · RS256+ES256 (JWKS) | danh sách ĐÓNG tách theo loại khoá: secret chỉ HS*, JWKS chỉ RS*/PS*/ES*/EdDSA; không `none` |
@@ -99,7 +100,7 @@ Header gate tiêm cho upstream: `X-DZ-Customer-Ref`, `X-DZ-Entitlement-Status`, 
 
 | Trường | Mặc định | Luật |
 |---|---|---|
-| `listen` | `127.0.0.1:9090` | bind RIÊNG, ≠ `gate.listen`. Trong docker giữ `127.0.0.1:9090`; không bao giờ `0.0.0.0` (bind cả mạng nội bộ lẫn mạng ngoài) |
+| `listen` | `127.0.0.1:9090` | bind RIÊNG, ≠ `gate.listen`. Trong docker giữ `127.0.0.1:9090`; không bao giờ `0.0.0.0` (bind cả mạng nội bộ lẫn mạng ngoài). Không phải loopback ⇒ `--check` cảnh báo (không lỗi) |
 | `log_customer_ref` | `hash` | `hash` (`sha256(salt‖ref)[:16]`, salt ngẫu nhiên mỗi tiến trình) hoặc `none`; không bao giờ log ref thô |
 
 Cổng vận hành: `/_dz/healthz` (tiến trình sống), `/_dz/readyz` (upstream TCP + hub/khoá API, đệm 5 s, 503 khi chưa sẵn sàng), `/_dz/metrics` (Prometheus).

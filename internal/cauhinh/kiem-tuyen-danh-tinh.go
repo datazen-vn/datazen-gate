@@ -72,6 +72,9 @@ func kiemDanhTinh(k *KetQuaKiem, c *Config, env Env) {
 			k.loi(t, "%v", err)
 			continue
 		}
+		if id.Secret != "" {
+			k.canh(t+".secret", "secret viết thẳng trong YAML: mọi người đọc được tệp cấu hình/bản sao lưu/git đều thấy; dùng secret_env (biến môi trường) và chỉ để secret viết thẳng khi thử")
+		}
 		if id.Type == "jwt" && (id.Issuer == "" || id.Audience == "") {
 			k.canh(t, "jwt không đặt issuer/audience: token của mọi bên cùng ký bằng khoá này đều qua")
 		}

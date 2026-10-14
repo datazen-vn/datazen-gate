@@ -27,7 +27,7 @@ func (c *Config) DongTuyen() []tuyen.Dong {
 
 // Khach dựng cấu hình client hub (khoá API đọc từ env).
 func (c *Config) Khach(env Env, client *http.Client, now func() time.Time, userAgent string, onLoi func(*hub.Loi)) hub.CauHinh {
-	khoa, _ := env(c.Hub.APIKeyEnv)
+	khoa, _, _, _ := c.KhoaAPI(env) // Kiem đã báo mọi lỗi; ở đây khoá lỗi/thiếu thì là rỗng
 	ttl := time.Duration(0)
 	if c.Hub.CacheTTL != nil {
 		ttl = c.Hub.CacheTTL.D()
