@@ -1,54 +1,74 @@
-# market-gate (dz-gate)
+<!-- dz-repo-type: service -->
 
-Cổng paywall độc lập cho app có sẵn gắn thuê bao DataZen: đứng trước app của dev, nhận diện khách, hỏi hub quyền dùng, rồi cho qua / chuyển tới trang thanh toán. Không cần sửa code app.
+# market-gate
 
-Trạng thái: đang xây (repo private tới khi E2E lát 2 xanh).
+Standalone paywall gate in Go that sits in front of an existing app and checks DataZen subscription entitlements.
 
-| | PR #1 | PR #2 (đây) | PR #3 |
-|---|---|---|---|
-| Khớp tuyến, danh tính (JWT+JWKS, session hook), client hub, lõi quyết định + paywall, cấu hình + kiểm luật | có | | |
-| Reverse proxy (xoá/tiêm header), `/_dz/healthz`/`readyz`/`metrics`, `cmd/dz-gate`, runner conformance (63 ca gate-v1) | | có | |
-| Dockerfile, compose, tài liệu triển khai, `kiem-docker.sh` (forward-auth: chưa) | | | có (PR này) |
+**Status:** experimental · **Owner:** datazen-vn admins · **License:** Proprietary (all rights reserved)
 
-## Hành vi (tóm tắt)
+Under construction; the repository stays private until the slice 2 end-to-end test is green. `dz-gate` stands in front of a developer's app, identifies the customer, asks the hub what the customer may use, and lets the request through or sends the customer to the checkout page. The app needs no code change.
 
-- Request → bypass (`/api/dz/*`, `/_dz/*`, `login_url`, `success_path`) hoặc bảng `routes` (first-match, `allow | require | soft`) → danh tính → quyền dùng.
-- Trình duyệt điều hướng (`GET`/`HEAD`, `Sec-Fetch-Mode: navigate`) chưa có quyền → `302` tới trang thanh toán; API/XHR/non-GET → `402` JSON (`checkout_url` vắng nếu không tạo được phiên).
-- Chưa đăng nhập → `302` login / `401`. Hub lỗi → `503` (fail-closed) hoặc cho qua theo `fail_mode: open` của tuyến, chỉ với lỗi mạng/timeout/5xx.
-- Danh tính KHÔNG xác định được (session_hook timeout/5xx, JWKS không tải được) trên tuyến cần quyền → `503` + `Retry-After: 5`, **không bao giờ** cho qua ẩn danh, kể cả `fail_mode: open` (kẻ tấn công tự gây được lỗi này). `fail_mode` chỉ áp cho hub lỗi.
-- Khách đã `active` đúng gói mà thiếu feature của tuyến → `402` KHÔNG tạo phiên (hub sẽ 409). Hỏi lại sau 409 = đọc tươi chịu trần 1 lần / 5 s / khách, không xoá đệm quyền.
-- Khách quay về `success_path?checkout_session_id=<uuid>` → đọc tươi quyền (tối đa 1 lần / 5 s / khách), không bị đệm "chưa có quyền" giữ lại.
-- Hợp đồng đầy đủ: `../meta/contracts/conformance/gate-v1/README.md`.
+## Quick start
 
-## Triển khai an toàn (BẮT BUỘC đọc)
-
-- **App của bạn chỉ được tới được QUA gate.** Upstream tin `X-DZ-*` (khách, gói, tính năng). Gate xoá mọi `X-DZ-*`, `X-Auth-Request-*`, `X-Forwarded-User` do client gửi rồi mới tiêm của mình, nhưng nếu app còn mở cổng ra ngoài song song (publish port, cổng LB khác, đường tắt nội bộ), kẻ tấn công gửi thẳng header giả vào app và gate không cứu được. Trong compose: `app` KHÔNG publish port, chỉ `dz-gate` publish; mạng nội bộ riêng.
-- **Cổng vận hành (`ops.listen`) bind riêng** (mặc định `127.0.0.1:9090`), không đưa ra Internet.
-- **`X-Forwarded-For` sau load balancer**: gate dựng `X-Forwarded-For`/`-Host`/`-Proto` từ KẾT NỐI TRỰC TIẾP, không tin giá trị client gửi — nên sau LB upstream thấy IP của LB. Follow-up (chưa làm): `trusted_proxies` để tin header của LB đã khai.
-
-- **Header của client bị xoá/bỏ trước khi gate tự đặt**: ngoài `X-DZ-*`/`X-Auth-Request-*`/`X-Forwarded-User`, gate xoá `Forwarded`, `X-Forwarded-*` (mọi biến thể: -Port, -Prefix, -Ssl, -Scheme, -Server…), `X-Original-Forwarded-*`, `X-Real-IP`, `X-Client-IP`, `X-Cluster-Client-IP`, `True-Client-IP`, `CF-Connecting-IP`, `Fastly-Client-IP` (app tin chúng để dựng IP/URL/giới hạn tốc độ), rồi mới đặt `X-Forwarded-For/-Host/-Proto` từ kết nối thật. **Mọi header có `_` trong tên bị bỏ** (như nginx `underscores_in_headers off`); app thật sự cần thì khai `inject.allow_underscore_headers: true` (có cảnh báo; header danh tính gạch dưới vẫn bị xoá).
-- **Tên header chuẩn hoá khi xoá**: hạ chữ thường VÀ `_` → `-` (server CGI-style như Rack/PHP/WSGI cũ đọc `X_DZ_Customer_Ref` như `X-DZ-Customer-Ref`); áp cho cả `strip_incoming`.
-- **Header ghi đè phương thức** (`X-HTTP-Method-Override`, `X-HTTP-Method`, `X-Method-Override`) KHÔNG bị xoá mặc định: quyết định tuyến của gate không phụ thuộc phương thức và xoá có thể làm vỡ API hợp lệ. Gate coi request là phương thức thật của kết nối, còn app có thể chạy phương thức khác: app tự quyết, không dùng thì thêm các tên này vào `inject.strip_incoming`.
-- **`X-Forwarded-Host`/`-Proto` chỉ theo `paywall.public_origins`**: Host của client khớp một origin thì dùng origin đó, không khớp thì dùng origin ĐẦU; scheme là của origin (gate nghe HTTP sau bộ kết thúc TLS). App nhiều domain phải khai đủ domain trong `public_origins` (cần cho `success_url` rồi). So khớp theo `host[:port]` chữ thường, nguyên văn.
-- **`/_dz/*` ở mặt công khai ⇒ gate tự trả 404**, không chuyển tới app (cổng vận hành chỉ ở `ops.listen`). `ops.listen` mặc định `127.0.0.1`: nếu Prometheus ở container khác phải đổi sang địa chỉ mạng nội bộ — không bao giờ `0.0.0.0` trên mạng công cộng.
-- **`Host` gửi upstream là host của upstream** (không phải Host gốc của client): app định tuyến theo vhost cần biết điều này; Host gốc đã được xác thực nằm ở `X-Forwarded-Host`.
-- Thân request chậm: máy chủ có `ReadHeaderTimeout`/`MaxHeaderBytes` nhưng không `ReadTimeout` cho thân (proxy streaming/upload dài); chặn ở lớp trước nếu cần.
-
-## Khai tuyến cho upstream Rails/Spring
-
-`/premium/*` KHÔNG khớp `/premium.json`, nhưng Rails (`(.:format)`) và Spring < 5.3 (suffix pattern) định tuyến `/premium.json` về handler của `/premium`. Khai `/premium*` (hoặc cả `/premium` lẫn `/premium.*`), hoặc `default_action: require` rồi liệt kê phần công khai bằng `allow`.
-
-## Tài liệu
-
-[Triển khai](docs/trien-khai.md) · [Cấu hình](docs/cau-hinh.md) · [Phản hồi, mã lỗi, số đo](docs/ma-loi.md) · [Changelog](CHANGELOG.md) · mẫu: `deploy/gate.example.yaml`, `deploy/compose.example.yml`, `deploy/Dockerfile`.
-
-## Phát triển
+Requirements: Docker. Go (see `go.mod`) to build from source.
 
 ```bash
-bash cong/kiem-kho.sh          # gofmt · vet · build · test -race (0 bỏ qua)
-bash cong/kiem-conformance.sh  # 63 ca gate-v1 của meta, ghim SHA
-bash cong/kiem-docker.sh       # build image thật + chạy + request qua cổng (cần docker)
+cp deploy/compose.example.yml compose.yml
+cp deploy/gate.example.yaml gate.yaml          # set upstream, identity, routes, paywall
+printf 'DZ_API_KEY=dz_test_<key>\n' > .env && chmod 0600 .env
+docker build -f deploy/Dockerfile --build-arg PHIEN_BAN=0.1.0 -t dz-gate:0.1.0 .
+docker run --rm --env-file .env -v "$PWD/gate.yaml:/c.yaml:ro" dz-gate:0.1.0 --check /c.yaml
+docker compose up -d
+```
+
+File permissions, the mandatory deployment rules and the compose details: [docs/trien-khai.md](docs/trien-khai.md).
+
+## Configuration
+
+One YAML file (`gate.yaml`; unknown fields are errors) plus environment variables for secrets. The file reference: [docs/cau-hinh.md](docs/cau-hinh.md); an annotated sample: [deploy/gate.example.yaml](deploy/gate.example.yaml).
+
+| Setting                       | Required                        | Default          | Description                                                                                                                 |
+| ----------------------------- | ------------------------------- | ---------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `DZ_API_KEY` (environment)    | yes                             |                  | Application key of the hub (`dz_test_…` for tests, `dz_live_…` for real money); never put it in the YAML, the image or logs |
+| `DZ_JWT_SECRET` (environment) | if `identity` uses `secret_env` |                  | Secret for the JWT identity resolver                                                                                        |
+| `gate.listen`                 | yes                             |                  | Public listen address                                                                                                       |
+| `gate.upstream`               | yes                             |                  | URL of the app behind the gate; must not point at the gate itself                                                           |
+| `routes`                      | yes                             |                  | One to 128 rules, first match wins: `allow`, `require` or `soft`                                                            |
+| `ops.listen`                  | no                              | `127.0.0.1:9090` | Operations port (health, readiness, metrics); never expose it to the Internet                                               |
+
+## Architecture
+
+A reverse proxy. A request is either bypassed (`/api/dz/*`, `/_dz/*`, the login page, the success path) or matched against `routes`, then identified (JWT with JWKS, or a session hook), then checked for entitlement. A browser navigation without entitlement gets a 302 to the checkout page; an API call gets a 402 JSON. If the customer cannot be identified the gate answers 503 and never lets an anonymous request through. Behaviour in full: [docs/hanh-vi-va-trien-khai-an-toan.md](docs/hanh-vi-va-trien-khai-an-toan.md). Code layout and boundaries: [AGENTS.md](AGENTS.md).
+
+## API surface
+
+| Path                                          | Purpose                                                                                            |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Everything else                               | Proxied to the upstream after the paywall decision, with `X-DZ-*` headers injected by the gate     |
+| `/_dz/healthz`, `/_dz/readyz`, `/_dz/metrics` | Health, readiness and metrics on the operations port only; on the public port `/_dz/*` answers 404 |
+
+Responses, error codes and metrics: [docs/ma-loi.md](docs/ma-loi.md).
+
+## Verify
+
+```bash
+bash cong/kiem-kho.sh          # gofmt, vet, build, tests with -race (no skips)
+bash cong/kiem-conformance.sh  # the 63 gate-v1 cases of the contracts repository, pinned by SHA
+bash cong/kiem-docker.sh       # builds the real image, runs it and sends requests through the gate (needs Docker)
 bash cong/kiem-govulncheck.sh
 ```
 
-Cấu hình mẫu: `deploy/gate.example.yaml` (= `internal/cauhinh/mau.go`, có test canh khớp). Xem `AGENTS.md` cho bố cục và ranh giới.
+## Deploy & rollback
+
+Runbook: [docs/trien-khai.md](docs/trien-khai.md). Deploy as a container image; roll back by running the previous image tag. Check the configuration of the new image with `--check` before switching.
+
+## Contracts & docs
+
+- Contracts: https://github.com/datazen-vn/market-meta (the `gate-v1` conformance suite)
+- Docs: [configuration](docs/cau-hinh.md), [deployment](docs/trien-khai.md), [responses and metrics](docs/ma-loi.md), [changelog](CHANGELOG.md)
+
+## License
+
+Proprietary. All rights reserved.
+
+Last updated: 2026-10-28 · main 6bdbf8a
