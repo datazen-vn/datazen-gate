@@ -71,4 +71,4 @@ Runbook: [docs/trien-khai.md](docs/trien-khai.md). Deploy as a container image; 
 
 Proprietary. All rights reserved.
 
-Last updated: 2026-10-28 · main 6bdbf8a
+Last updated: 2026-10-28
