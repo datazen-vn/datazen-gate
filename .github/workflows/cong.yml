@@ -1,4 +1,4 @@
-# Cong CI cua kho `market-gate`. Khung chep tu `runtime-agent` (bo phan cap phat). KHONG co CI chay that (workspace chot 13/10):
+# Cong CI cua kho `datazen-gate`. Khung chep tu `runtime-agent` (bo phan cap phat). KHONG co CI chay that (workspace chot 13/10):
 # tep nay la khung san de bat khi co runner; cong that la `bash cong/kiem-kho.sh` va `bash cong/kiem-govulncheck.sh` chay tay, dan dau ra vao PR.
 #
 # Luat ba trang thai: DAT=0 · TRUOT=1 · KHONG-KIEM-DUOC=2 ≠ mot dau ra giong het DAT. Xanh khong duoc doc thanh "da kiem" khi 0 goi / co ca BO QUA.
@@ -41,9 +41,9 @@ jobs:
           echo "kiem-govulncheck.sh -> mã $ma"
           [ "$ma" -eq 0 ] || exit 1
 
-  # `lint-kho.sh` cua meta can `../meta` ngang hang — runner chi checkout MOT kho, nen dung composite action trong `market-meta`
+  # `lint-kho.sh` cua meta can `../meta` ngang hang — runner chi checkout MOT kho, nen dung composite action trong `datazen-hub-meta`
   # (cung cach `runtime-agent`). CHUA CHUNG MINH luc chay (khong co CI that): neu `uses:` lien kho private doi ma thong hanh thi
-  # buoc nay do — luc do thay bang buoc checkout `market-meta` roi chay `workspace/lint-kho.sh`.
+  # buoc nay do — luc do thay bang buoc checkout `datazen-hub-meta` roi chay `workspace/lint-kho.sh`.
   lint-kho:
     runs-on: ${{ fromJSON(vars.DZ_NHAN_RUNNER || '["ubuntu-latest"]') }}
     steps:
@@ -51,7 +51,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: gate
-      - uses: datazen-vn/market-meta/.github/actions/lint-kho@main
+      - uses: datazen-vn/datazen-hub-meta/.github/actions/lint-kho@main
         if: ${{ !cancelled() }}
         with:
           kho: gate
