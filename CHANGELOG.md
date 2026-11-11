@@ -1,8 +1,13 @@
 # Changelog
 
-Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm khi repo công khai (`0.x` tới khi E2E lát 2 xanh).
+Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm (repo công khai từ 11/11/2026; `0.x` tới khi E2E lát 2 xanh).
 
-## [0.1.0] — chưa phát hành (repo private)
+## [Chưa phát hành]
+
+### Đổi
+- Giấy phép MIT (trước là độc quyền), repo chuyển public; báo lỗ hổng qua private vulnerability reporting của GitHub.
+
+## [0.1.0] — chưa phát hành
 
 Cổng paywall độc lập (reverse proxy Go) cho app có sẵn gắn thuê bao DataZen. Hành vi dùng chung với `@datazen/sdk/gate` qua bộ ca conformance `gate-v1` (meta).
 
