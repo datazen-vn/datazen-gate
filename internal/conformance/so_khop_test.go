@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/datazen-vn/market-gate/internal/quyetdinh"
+	"github.com/datazen-vn/datazen-gate/internal/quyetdinh"
 )
 
 // soHeader: giá trị kỳ vọng là chuỗi KHỚP NGUYÊN VĂN, hoặc `regex:<mẫu>` (khớp một phần, không neo ngầm), hoặc `absent` (header phải vắng).

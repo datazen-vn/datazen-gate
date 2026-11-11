@@ -1,4 +1,4 @@
-// Package tuyen khớp đường dẫn với bảng tuyến theo CHUẨN CHUNG của SDK và market-gate (README conformance gate-v1, mục "Khớp tuyến").
+// Package tuyen khớp đường dẫn với bảng tuyến theo CHUẨN CHUNG của SDK và datazen-gate (README conformance gate-v1, mục "Khớp tuyến").
 //
 // An toàn: đường dẫn là dữ liệu kẻ tấn công điều khiển. Upstream có thể giải mã/chuẩn hoá khác ta (`/a%2Fb`, `//`, `\`, `;tham-số`,
 // hoa/thường) nên mỗi đường dẫn được xét ở NHIỀU DẠNG (xem DangDuongDan). Nguyên tắc: dạng thêm vào chỉ CHẶN THÊM, không MỞ THÊM.

@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/danhtinh"
-	"github.com/datazen-vn/market-gate/internal/dem"
+	"github.com/datazen-vn/datazen-gate/internal/danhtinh"
+	"github.com/datazen-vn/datazen-gate/internal/dem"
 )
 
 const (

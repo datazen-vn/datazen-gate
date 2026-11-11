@@ -3,8 +3,8 @@
 package quyetdinh
 
 import (
-	"github.com/datazen-vn/market-gate/internal/hub"
-	"github.com/datazen-vn/market-gate/internal/tuyen"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/tuyen"
 )
 
 // Lý do chặn (khớp `decision.reason` của gate-v1).

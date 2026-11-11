@@ -13,9 +13,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/cauhinh"
-	"github.com/datazen-vn/market-gate/internal/hub"
-	"github.com/datazen-vn/market-gate/internal/vanhanh"
+	"github.com/datazen-vn/datazen-gate/internal/cauhinh"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/vanhanh"
 )
 
 // Mã thoát: 0 đạt · 1 cấu hình/chạy SAI (--check liệt kê hết lỗi) · 2 KHÔNG KIỂM ĐƯỢC (không đọc được tệp cấu hình…).

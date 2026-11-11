@@ -8,6 +8,12 @@ Standalone paywall gate in Go that sits in front of an existing app and checks D
 
 Under construction (`0.x`, strict semantic versioning: it runs on other people's machines). `dz-gate` stands in front of a developer's app, identifies the customer, asks the hub what the customer may use, and lets the request through or sends the customer to the checkout page. The app needs no code change.
 
+## Status
+
+Experimental and private. It goes public only after the slice-2 E2E passes: the gate in front of an app without the SDK, on the platform `deploy/saas-e2e` stack.
+
+Not yet available: `forward-auth` mode, `trusted_proxies` (trust `X-Forwarded-*` from a declared load balancer), an option to turn off path logging.
+
 ## Quick start
 
 Requirements: Docker. Go (see `go.mod`) to build from source.

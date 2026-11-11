@@ -3,7 +3,7 @@ package cauhinh
 import (
 	"fmt"
 
-	"github.com/datazen-vn/market-gate/internal/tuyen"
+	"github.com/datazen-vn/datazen-gate/internal/tuyen"
 )
 
 func coFailMoCua(c *Config) bool {

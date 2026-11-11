@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/dem"
-	"github.com/datazen-vn/market-gate/internal/gopgoi"
-	"github.com/datazen-vn/market-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/dem"
+	"github.com/datazen-vn/datazen-gate/internal/gopgoi"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
 )
 
 const (

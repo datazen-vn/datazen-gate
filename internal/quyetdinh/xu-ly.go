@@ -4,9 +4,9 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/datazen-vn/market-gate/internal/danhtinh"
-	"github.com/datazen-vn/market-gate/internal/hub"
-	"github.com/datazen-vn/market-gate/internal/tuyen"
+	"github.com/datazen-vn/datazen-gate/internal/danhtinh"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/tuyen"
 )
 
 // CongHopHeader: header đánh dấu "yêu cầu này đã qua gate một lần": thấy ở yêu cầu đến ⇒ 508 (chặn vòng gate tự proxy chính nó).

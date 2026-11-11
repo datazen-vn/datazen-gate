@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/gopgoi"
+	"github.com/datazen-vn/datazen-gate/internal/gopgoi"
 )
 
 const (

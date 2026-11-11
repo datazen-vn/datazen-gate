@@ -1,4 +1,4 @@
-// Runner conformance `gate-v1` của market-gate: chạy MỌI ca của meta (`contracts/conformance/gate-v1`) qua proxy thật (chay.Lap) với hub giả,
+// Runner conformance `gate-v1` của datazen-gate: chạy MỌI ca của meta (`contracts/conformance/gate-v1`) qua proxy thật (chay.Lap) với hub giả,
 // session-hook giả, upstream giả và đồng hồ giả. Ca lệch = đỏ; không skip; không đọc được bộ ca = đỏ có nhãn "KHÔNG KIỂM ĐƯỢC"
 // (README gate-v1, "Hợp đồng cho runner" #3–#4). Bộ ca đọc từ `DZ_META_DIR` (mặc định `../meta` cạnh kho này).
 package conformance

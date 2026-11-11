@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/cauhinh"
-	"github.com/datazen-vn/market-gate/internal/chay"
-	"github.com/datazen-vn/market-gate/internal/quyetdinh"
+	"github.com/datazen-vn/datazen-gate/internal/cauhinh"
+	"github.com/datazen-vn/datazen-gate/internal/chay"
+	"github.com/datazen-vn/datazen-gate/internal/quyetdinh"
 )
 
 const gioMacDinh = "2026-10-13T10:00:00Z"

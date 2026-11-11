@@ -10,12 +10,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/cauhinh"
-	"github.com/datazen-vn/market-gate/internal/hub"
-	"github.com/datazen-vn/market-gate/internal/proxy"
-	"github.com/datazen-vn/market-gate/internal/quyetdinh"
-	"github.com/datazen-vn/market-gate/internal/tuyen"
-	"github.com/datazen-vn/market-gate/internal/vanhanh"
+	"github.com/datazen-vn/datazen-gate/internal/cauhinh"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/proxy"
+	"github.com/datazen-vn/datazen-gate/internal/quyetdinh"
+	"github.com/datazen-vn/datazen-gate/internal/tuyen"
+	"github.com/datazen-vn/datazen-gate/internal/vanhanh"
 )
 
 // TuyChon của Lap: mọi thứ ngoài cấu hình (để test tiêm giả).

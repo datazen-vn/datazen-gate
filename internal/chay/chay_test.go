@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/datazen-vn/market-gate/internal/cauhinh"
+	"github.com/datazen-vn/datazen-gate/internal/cauhinh"
 )
 
 func envThu(kv map[string]string) cauhinh.Env {

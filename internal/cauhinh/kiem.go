@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/hub"
-	"github.com/datazen-vn/market-gate/internal/quyetdinh"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/quyetdinh"
 )
 
 // Muc của một vấn đề.

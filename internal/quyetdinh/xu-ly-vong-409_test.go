@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/tuyen"
+	"github.com/datazen-vn/datazen-gate/internal/tuyen"
 )
 
 // Panel an ninh C1: khách trả tiền gói rẻ không được gọi hub theo tốc độ request của chính họ.

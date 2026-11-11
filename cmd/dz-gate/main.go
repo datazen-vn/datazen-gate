@@ -4,7 +4,7 @@ package main
 import (
 	"os"
 
-	"github.com/datazen-vn/market-gate/internal/chay"
+	"github.com/datazen-vn/datazen-gate/internal/chay"
 )
 
 // phienBan được gán lúc build: -ldflags "-X main.phienBan=1.2.3".

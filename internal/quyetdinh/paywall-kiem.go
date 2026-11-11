@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/datazen-vn/market-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
 )
 
 // KiemPaywall liệt kê MỌI lỗi cấu hình (rỗng = hợp lệ). Không ném ở lần đầu gặp lỗi để `--check` báo đủ.
