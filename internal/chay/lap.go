@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"strings"
 	"time"
@@ -55,27 +56,49 @@ func Lap(cfg *cauhinh.Config, o TuyChon) (*Dich, error) {
 	if err != nil {
 		return nil, err
 	}
-	up, err := url.Parse(cfg.Gate.Upstream)
-	if err != nil {
-		return nil, err
-	}
 	hash := cfg.Ops.LogCustomerRef == "hash"
+	quanSat := func(r *http.Request, kq quyetdinh.KetQua, d time.Duration) {
+		ghiRequest(log, do, bam, hash, r, kq, d)
+		if o.QuanSat != nil {
+			o.QuanSat(r, kq)
+		}
+	}
 	tinCay, _ := cauhinh.ParseTrustedProxies(cfg.Gate.TrustedProxies) // đã qua Kiem ⇒ không hỏng
-	pr := proxy.Moi(proxy.Cau{
-		Cong: cong.Cong, Upstream: up, Xoa: cfg.XoaHeader(), CongKhai: congKhai(cfg), TrustedProxies: tinCay, GiuGachDuoi: cfg.Inject.AllowUnderscoreHeaders, Transport: o.Transport,
-		QuanSat: func(r *http.Request, kq quyetdinh.KetQua, d time.Duration) {
-			ghiRequest(log, do, bam, hash, r, kq, d)
-			if o.QuanSat != nil {
-				o.QuanSat(r, kq)
-			}
-		},
-		BaoLoiUpstream: func(error) { do.Cong("dz_gate_upstream_errors_total") },
-	})
-	ss := vanhanh.MoiSanSang(o.Now,
-		vanhanh.Kiem{Ten: "upstream", Fn: vanhanh.KiemTCP(diaChiTCP(up))},
-		vanhanh.Kiem{Ten: "hub", Fn: cong.Khach.Ping},
-	)
-	return &Dich{Chinh: pr, Ops: vanhanh.Ops(do, ss), Cong: cong, Do: do, SanSang: ss}, nil
+	var chinh http.Handler
+	kiem := []vanhanh.Kiem{{Ten: "hub", Fn: cong.Khach.Ping}}
+	if cfg.Gate.Mode == "forward-auth" {
+		tin, err := cidrTin(cfg.Gate.ForwardAuth.AllowFrom)
+		if err != nil {
+			return nil, err
+		}
+		chinh = proxy.MoiForwardAuth(proxy.CauForwardAuth{Cong: cong.Cong, Xoa: cfg.XoaHeader(), TinTu: tin, CongKhai: congKhai(cfg), QuanSat: quanSat})
+	} else {
+		up, err := url.Parse(cfg.Gate.Upstream)
+		if err != nil {
+			return nil, err
+		}
+		chinh = proxy.Moi(proxy.Cau{
+			Cong: cong.Cong, Upstream: up, Xoa: cfg.XoaHeader(), CongKhai: congKhai(cfg), TrustedProxies: tinCay, GiuGachDuoi: cfg.Inject.AllowUnderscoreHeaders, Transport: o.Transport,
+			QuanSat:        quanSat,
+			BaoLoiUpstream: func(error) { do.Cong("dz_gate_upstream_errors_total") },
+		})
+		kiem = []vanhanh.Kiem{{Ten: "upstream", Fn: vanhanh.KiemTCP(diaChiTCP(up))}, kiem[0]}
+	}
+	ss := vanhanh.MoiSanSang(o.Now, kiem...)
+	return &Dich{Chinh: chinh, Ops: vanhanh.Ops(do, ss), Cong: cong, Do: do, SanSang: ss}, nil
+}
+
+// cidrTin: gate.forward_auth.allow_from (đã qua Kiem) ⇒ danh sách prefix.
+func cidrTin(ds []string) ([]netip.Prefix, error) {
+	var ps []netip.Prefix
+	for _, s := range ds {
+		p, err := netip.ParsePrefix(s)
+		if err != nil {
+			return nil, err
+		}
+		ps = append(ps, p)
+	}
+	return ps, nil
 }
 
 // congKhai: origin của paywall.public_origins (đã qua Kiem: https://host[:port]).

@@ -9,6 +9,8 @@ Mọi phản hồi của gate đều `Cache-Control: no-store`; thân JSON `{ "c
 | 302 | — | chưa đăng nhập + điều hướng trình duyệt + có `login_url` ⇒ `Location: login_url`; hoặc chưa có quyền + điều hướng + tạo được phiên ⇒ trang thanh toán | **không bao giờ** 302 cho non-GET/HEAD, cũng không cho fetch/XHR (`Sec-Fetch-Mode` ≠ `navigate`, `X-Requested-With`) |
 | 401 | `dz_no_identity` | không nhận diện được khách | |
 | 402 | `dz_not_entitled` | không có quyền / thiếu feature | thân: `status` (trạng thái thuê bao), `plan_code`, `checkout_url` (VẮNG nếu không tạo được phiên, kể cả khi khách đã active đúng gói), `grace_until` (hoặc `null`) |
+| 400 | `dz_forward_bad_request` | chỉ `forward-auth`: thiếu/hỏng `X-Forwarded-Uri`/`X-Original-URI`, hoặc Host không khớp `paywall.public_origins` | không gọi hub |
+| 403 | `dz_forward_untrusted` | chỉ `forward-auth`: kết nối không thuộc `gate.forward_auth.allow_from` | không gọi hub |
 | 404 | `dz_not_found` | `/_dz/*` ở cổng công khai | cổng vận hành chỉ ở `ops.listen` |
 | 502 | `dz_upstream_unavailable` | upstream không trả lời | không kèm chi tiết (tránh lộ địa chỉ nội bộ); dial tới app chết hết hạn sau 5 s |
 | 503 | `dz_hub_unavailable` | không hỏi được hub (fail-closed), hub trả trạng thái lạ, 401/403/404/429 của hub (kể cả tuyến `fail_mode: open`) | |

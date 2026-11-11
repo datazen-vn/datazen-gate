@@ -47,7 +47,7 @@ docs/                trien-khai.md, cau-hinh.md, ma-loi.md
 testdata/            vector JWT/JWKS sinh bằng `jose` của sdk (sinh-vector.mjs)
 ```
 
-Chưa có: chế độ `forward-auth`.
+Chế độ `forward-auth` (`gate.mode`): `internal/proxy/forward-auth.go` (`GET /_dz/auth`, request ảo từ header proxy, dùng chung lõi `quyetdinh`), luật cấu hình ở `internal/cauhinh/kiem-forward-auth.go`; hướng dẫn `docs/forward-auth.md`.
 
 ## Lệnh thường dùng
 

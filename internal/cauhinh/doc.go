@@ -50,10 +50,18 @@ type Config struct {
 type Gate struct {
 	Listen   string `yaml:"listen"`
 	Upstream string `yaml:"upstream"`
-	Mode     string `yaml:"mode"` // proxy
+	Mode     string `yaml:"mode"` // proxy | forward-auth
 	// TrustedProxies: CIDR (hoặc IP đơn) của load balancer/CDN đứng ngay trước gate. Rỗng (mặc định) = không tin ai: X-Forwarded-* của
 	// client luôn bị xoá, IP khách = kết nối trực tiếp. Chỉ kết nối TỚI TỪ các dải này mới được tin X-Forwarded-For/-Proto.
 	TrustedProxies []string `yaml:"trusted_proxies"`
+	// ForwardAuth chỉ dùng khi mode = forward-auth: gate không có upstream, chỉ trả lời `GET /_dz/auth` cho proxy của dev.
+	ForwardAuth ForwardAuth `yaml:"forward_auth"`
+}
+
+// ForwardAuth: cấu hình chế độ forward-auth.
+type ForwardAuth struct {
+	// AllowFrom: CIDR của proxy được tin gửi X-Forwarded-*/X-Original-*. Bắt buộc khi mode = forward-auth; không có loopback ngầm.
+	AllowFrom []string `yaml:"allow_from"`
 }
 
 // Hub: kết nối tới hub DataZen.

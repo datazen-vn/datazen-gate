@@ -18,8 +18,9 @@ Tệp gắn vào container phải **đọc được bởi uid 65532** (nonroot) 
 | Trường | Mặc định | Luật |
 |---|---|---|
 | `listen` | (bắt buộc) | `host:port` hoặc `:port`, cổng 1–65535 |
-| `upstream` | (bắt buộc) | URL `http(s)://host[:port]` của app, không `user:password`; **không** được trỏ về chính `listen` (gate tự proxy chính nó) |
-| `mode` | `proxy` | chỉ `proxy` (forward-auth: chưa hỗ trợ, xem [triển khai](trien-khai.md)) |
+| `upstream` | (bắt buộc ở `proxy`) | URL `http(s)://host[:port]` của app, không `user:password`; **không** được trỏ về chính `listen` (gate tự proxy chính nó) |
+| `mode` | `proxy` | `proxy` (reverse proxy) hoặc `forward-auth` (`GET /_dz/auth` cho proxy có sẵn của dev, xem [forward-auth](forward-auth.md)). `forward-auth`: không có upstream (khai thì bỏ qua + cảnh báo), `paywall.public_origins` bắt buộc |
+| `forward_auth.allow_from` | (bắt buộc ở `forward-auth`) | danh sách CIDR của proxy được tin gửi `X-Forwarded-*`/`X-Original-*`, vd `["172.16.0.0/12"]`; không có loopback ngầm; ở chế độ `proxy` bị bỏ qua + cảnh báo |
 | `trusted_proxies` | `[]` | CIDR/IP đơn (IPv4/IPv6) của LB/CDN đứng ngay trước gate. Rỗng = không tin ai (IP khách = kết nối trực tiếp). Có ⇒ chỉ kết nối từ các dải này được tin `X-Forwarded-For` (phải→trái, bỏ hop tin cậy, IP không tin đầu tiên = khách; gate đặt lại header = IP đó) và `X-Forwarded-Proto` (`http`/`https`). Hỏng/quá 1 KiB ⇒ dùng IP kết nối. Token dạng `ip:port`/`[v6]:port` được nhận (bỏ cổng). **Lưu ý:** XFF dài >1 KiB hoặc có token rác ⇒ app thấy IP của LB, nên app KHÔNG được coi IP nội bộ của LB là tin cậy (allowlist admin, miễn giới hạn tốc độ). Topo CDN→LB→gate: `X-Forwarded-Proto` là của chặng CDN→LB (thường `http`) và đè scheme của `public_origins` — app ép HTTPS có thể lặp redirect; khi đó đừng khai CDN/LB đó, hoặc cấu hình LB đặt Proto theo scheme của khách. `--check`: sai CIDR là lỗi; `0.0.0.0/0`/`::/0` cảnh báo (ai cũng giả được IP) |
 
 ## `hub`
