@@ -14,7 +14,7 @@
 
 `dz-gate`: cổng paywall độc lập (Go, một tệp chạy được) đứng trước app có sẵn của dev. Nhận request của khách cuối, nhận diện (JWT / session hook),
 hỏi hub quyền dùng (`GET /v1/customers/{ref}/entitlements`), rồi cho qua / `302` tới trang thanh toán hosted / `402` JSON. Cùng hành vi với
-`@datazen/sdk/gate` (repo `sdk`): hai mặt tiền, MỘT bộ ca conformance.
+`@datazen-vn/sdk/gate` (repo `sdk`): hai mặt tiền, MỘT bộ ca conformance.
 
 ## Sở hữu
 
@@ -51,7 +51,7 @@ Chưa có: chế độ `forward-auth`.
 
 ## Lệnh thường dùng
 
-Go 1.26.9 (`go.mod`).
+Go 1.26.10 (`go.mod`).
 
 ```bash
 bash cong/kiem-kho.sh          # gofmt · vet · build · test -race, 0 ca bỏ qua (trừ conformance). Mã thoát 0 đạt · 1 trượt · 2 không kiểm được

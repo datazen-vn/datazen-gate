@@ -5,11 +5,14 @@ Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm (r
 ## [Chưa phát hành]
 
 ### Đổi
+- Go 1.26.10 (go.mod + image build): sửa GO-2026-6809 ở `crypto/x509` mà govulncheck bắt.
+- CI: bỏ job `lint-kho` gọi action của repo meta private (repo public không gọi được); lint kho chạy ở máy.
+- Tên gói SDK mặt tiền đổi sang `@datazen-vn/sdk`.
 - Giấy phép MIT (trước là độc quyền), repo chuyển public; báo lỗ hổng qua private vulnerability reporting của GitHub.
 
 ## [0.1.0] — chưa phát hành
 
-Cổng paywall độc lập (reverse proxy Go) cho app có sẵn gắn thuê bao DataZen. Hành vi dùng chung với `@datazen/sdk/gate` qua bộ ca conformance `gate-v1` (meta).
+Cổng paywall độc lập (reverse proxy Go) cho app có sẵn gắn thuê bao DataZen. Hành vi dùng chung với `@datazen-vn/sdk/gate` qua bộ ca conformance `gate-v1` (meta).
 
 ### Thêm
 - Lõi: khớp tuyến (glob first-match, bốn dạng đường dẫn, bypass), danh tính (JWT HS*/RS*/PS*/ES*/EdDSA + JWKS, session hook chống SSRF), client hub (đệm, ETag/304, stale-if-error, gộp lời gọi, trần đọc tươi 1 lần/5 s, phiên thanh toán đệm tới `replace_after`), quyết định + paywall 302/401/402/503/508.

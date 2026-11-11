@@ -41,17 +41,5 @@ jobs:
           echo "kiem-govulncheck.sh -> mã $ma"
           [ "$ma" -eq 0 ] || exit 1
 
-  # `lint-kho.sh` cua meta can `../meta` ngang hang — runner chi checkout MOT kho, nen dung composite action trong `datazen-hub-meta`
-  # (cung cach `runtime-agent`). CHUA CHUNG MINH luc chay (khong co CI that): neu `uses:` lien kho private doi ma thong hanh thi
-  # buoc nay do — luc do thay bang buoc checkout `datazen-hub-meta` roi chay `workspace/lint-kho.sh`.
-  lint-kho:
-    runs-on: ${{ fromJSON(vars.DZ_NHAN_RUNNER || '["ubuntu-latest"]') }}
-    steps:
-      # `path:` BAT BUOC va phai la ten that cua kho: lint giai `](../meta/docs/...)` tu vi tri file, nen hai kho phai ngang hang.
-      - uses: actions/checkout@v4
-        with:
-          path: gate
-      - uses: datazen-vn/datazen-hub-meta/.github/actions/lint-kho@main
-        if: ${{ !cancelled() }}
-        with:
-          kho: gate
+# Job `lint-kho` (composite action trong `datazen-hub-meta`) da bo 11/11/2026: repo nay public, khong goi duoc action cua repo private.
+# Lint kho van chay o may: `bash ../meta/workspace/lint-kho.sh .` (pre-push hook cua workspace).

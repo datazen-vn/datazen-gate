@@ -1,5 +1,5 @@
 // Package quyetdinh là lõi quyết định của dz-gate: từ yêu cầu + danh tính + quyền dùng + chính sách tuyến ⇒ Quyet (cùng hình với
-// `Decision` của @datazen/sdk và `expect.decision` của bộ ca gate-v1) và phản hồi gate tự trả (302/401/402/503/508).
+// `Decision` của @datazen-vn/sdk và `expect.decision` của bộ ca gate-v1) và phản hồi gate tự trả (302/401/402/503/508).
 package quyetdinh
 
 import (

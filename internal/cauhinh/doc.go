@@ -1,7 +1,7 @@
 // Package cauhinh đọc cấu hình YAML của dz-gate, kiểm MỌI luật (liệt kê hết lỗi để `--check` báo đủ một lượt) và dựng các thành phần
 // (hub, danh tính, bảng tuyến, paywall) thành một quyetdinh.Cong.
 //
-// Hình dạng khớp 1:1 với `config` của bộ ca conformance gate-v1 (snake_case) và với tuỳ chọn `createGate` của @datazen/sdk.
+// Hình dạng khớp 1:1 với `config` của bộ ca conformance gate-v1 (snake_case) và với tuỳ chọn `createGate` của @datazen-vn/sdk.
 // Bí mật KHÔNG nằm trong YAML: khoá API qua `hub.api_key_env`, secret HMAC qua `secret_env`.
 package cauhinh
 

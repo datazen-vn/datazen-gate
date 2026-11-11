@@ -1,4 +1,4 @@
-// Sinh vector kiểm thử JWT/JWKS bằng `jose` (thư viện của @datazen/sdk) để chứng minh phần xác minh viết bằng Go
+// Sinh vector kiểm thử JWT/JWKS bằng `jose` (thư viện của @datazen-vn/sdk) để chứng minh phần xác minh viết bằng Go
 // (internal/danhtinh) khớp một cài đặt độc lập. Chạy từ kho `sdk` (có jose trong node_modules):
 //   node ../gate/testdata/sinh-vector.mjs ../gate/testdata
 // Cần `npm ci` ở kho sdk để có jose. Sinh lại: khoá ngẫu nhiên mỗi lần ⇒ jwks.json và jwt-vectors.json phải commit CÙNG NHAU.
