@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Cong kiem kho `market-gate`: gofmt · go vet · go build · go test -race (0 ca bo qua), chay MOT lan, in so that.
+# Cong kiem kho `datazen-gate`: gofmt · go vet · go build · go test -race (0 ca bo qua), chay MOT lan, in so that.
 #
 #   bash cong/kiem-kho.sh
 #

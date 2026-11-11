@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/danhtinh"
-	"github.com/datazen-vn/market-gate/internal/hub"
-	"github.com/datazen-vn/market-gate/internal/tuyen"
+	"github.com/datazen-vn/datazen-gate/internal/danhtinh"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/tuyen"
 )
 
 var goc = time.Date(2026, 10, 13, 10, 0, 0, 0, time.UTC)

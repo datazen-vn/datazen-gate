@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/danhtinh"
-	"github.com/datazen-vn/market-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/danhtinh"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
 )
 
 func errLoaiDanhTinh(t string) error {

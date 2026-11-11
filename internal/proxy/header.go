@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/datazen-vn/market-gate/internal/hub"
-	"github.com/datazen-vn/market-gate/internal/quyetdinh"
-	"github.com/datazen-vn/market-gate/internal/tuyen"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/quyetdinh"
+	"github.com/datazen-vn/datazen-gate/internal/tuyen"
 )
 
 // ChuanHoaTenHeader: hạ chữ thường VÀ đổi `_` thành `-`. Server theo quy ước CGI (Rack/Puma/Unicorn, PHP-FPM, WSGI cũ, Gunicorn < 22)

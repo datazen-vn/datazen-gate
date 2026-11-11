@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/datazen-vn/market-gate/internal/danhtinh"
-	"github.com/datazen-vn/market-gate/internal/hub"
-	"github.com/datazen-vn/market-gate/internal/quyetdinh"
-	"github.com/datazen-vn/market-gate/internal/tuyen"
+	"github.com/datazen-vn/datazen-gate/internal/danhtinh"
+	"github.com/datazen-vn/datazen-gate/internal/hub"
+	"github.com/datazen-vn/datazen-gate/internal/quyetdinh"
+	"github.com/datazen-vn/datazen-gate/internal/tuyen"
 )
 
 // XoaMacDinh: header luôn bị xoá khỏi yêu cầu đến, kể cả khi dev không khai strip_incoming. Hai nhóm:

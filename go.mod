@@ -1,4 +1,4 @@
-module github.com/datazen-vn/market-gate
+module github.com/datazen-vn/datazen-gate
 
 go 1.26.10
 
