@@ -21,6 +21,8 @@ paywall:
 # hub, identity, routes, paywall.*: y hệt chế độ proxy
 ```
 
+`X-Forwarded-Proto` không được dùng: scheme công khai lấy từ `paywall.public_origins`.
+
 Quyết định giống hệt chế độ proxy (cùng lõi, cùng ca `gate-v1`): cho qua ⇒ `200` rỗng + `X-DZ-Customer-Ref`, `-Entitlement-Status`, `-Plan`, `-Features`, `-Grace-Until`, `-Entitlement-Source`; chặn ⇒ cùng `302`/`401`/`402`/`503` và thân JSON, `Retry-After` như [mã lỗi](ma-loi.md).
 
 Gate dựng request ảo từ `X-Forwarded-Method`, `X-Forwarded-Host`, `X-Forwarded-Uri` (Caddy, Traefik) hoặc `X-Original-URI`, `X-Original-Method` (nginx); `Cookie`, `Authorization`, `Accept`, `Sec-Fetch-Mode` lấy từ chính request hỏi (proxy phải chép sang). Lỗi do gate tự trả, không gọi hub:
@@ -36,11 +38,21 @@ Danh tính không xác định ⇒ `503` + `Retry-After`, không bao giờ cho q
 
 ```caddyfile
 app.vn {
-    forward_auth gate:8080 {
-        uri /_dz/auth
-        copy_headers X-DZ-Customer-Ref X-DZ-Entitlement-Status X-DZ-Plan X-DZ-Features X-DZ-Grace-Until X-DZ-Entitlement-Source
+    route {
+        # BẮT BUỘC: gate chỉ đặt header nào có giá trị (tuyến `allow` không có Customer-Ref), mà copy_headers không chắc xoá
+        # giá trị client gửi ⇒ xoá trước, nếu không client giả được X-DZ-* ở tuyến công khai.
+        request_header -X-DZ-Customer-Ref
+        request_header -X-DZ-Entitlement-Status
+        request_header -X-DZ-Plan
+        request_header -X-DZ-Features
+        request_header -X-DZ-Grace-Until
+        request_header -X-DZ-Entitlement-Source
+        forward_auth gate:8080 {
+            uri /_dz/auth
+            copy_headers X-DZ-Customer-Ref X-DZ-Entitlement-Status X-DZ-Plan X-DZ-Features X-DZ-Grace-Until X-DZ-Entitlement-Source
+        }
+        reverse_proxy app:3000
     }
-    reverse_proxy app:3000
 }
 ```
 
@@ -62,7 +74,7 @@ http:
 
 ## nginx
 
-`auth_request` chỉ hiểu 2xx/401/403 (mã khác thành 500, mất 302/402 và thân JSON). Vì vậy request hỏi gửi `X-DZ-Auth-Mask: 1`: gate đổi phản hồi chặn thành `401` rỗng kèm `X-DZ-Auth-Status: <mã thật>`; nginx rồi hỏi lại gate (không có header che) để trả nguyên 302/402/503 cho khách. Quyền đã nằm trong đệm nên lần hỏi lại không tốn thêm lời gọi hub.
+`auth_request` chỉ hiểu 2xx/401/403 (mã khác thành 500, mất 302/402 và thân JSON). Vì vậy request hỏi gửi `X-DZ-Auth-Mask: 1`: gate đổi phản hồi chặn thành `401` rỗng kèm `X-DZ-Auth-Status: <mã thật>`; nginx rồi hỏi lại gate (không có header che) để trả nguyên 302/402/503 cho khách. Quyền đã nằm trong đệm nên thường lần hỏi lại không tốn thêm lời gọi hub; riêng lỗi hub (503) không được đệm nên bị hỏi hub lần nữa.
 
 ```nginx
 location = /_dz_auth {
@@ -106,12 +118,12 @@ location / {
 }
 ```
 
-Hiếm khi quyền đổi giữa hai lần hỏi, khách thấy một trang rỗng; tải lại là xong.
+`X-DZ-Auth-Mask` chỉ có tác dụng khi request không có `X-Forwarded-Method` (tức nginx). Hiếm khi quyền đổi giữa hai lần hỏi, khách thấy một trang rỗng; tải lại là xong.
 
 ## Bắt buộc
 
 - **App chỉ được tới qua proxy** (mạng nội bộ, không publish cổng của app): nếu không, ai cũng gửi được `X-DZ-*` giả.
-- **Proxy phải xoá `X-DZ-*` của client** trước khi gắn header của gate (Caddy `copy_headers`, Traefik `authResponseHeaders`, nginx `proxy_set_header` ở trên đều đặt lại đủ sáu header). Header `X-DZ-*` khác sáu tên trên vẫn lọt tới app: app chỉ nên đọc sáu tên này. Kiểm: gửi `X-DZ-Customer-Ref: gia` tới tuyến `allow`; app không được thấy giá trị đó.
+- **Proxy phải xoá `X-DZ-*` của client** trước khi gắn header của gate (Caddy: `request_header -X-DZ-…` trong đoạn trên, vì gate không đặt header không có giá trị và `copy_headers` chỉ chép header có trong phản hồi; Traefik `authResponseHeaders` và nginx `proxy_set_header` ở trên đã đặt lại/xoá đủ sáu header). Header `X-DZ-*` khác sáu tên trên vẫn lọt tới app: app chỉ nên đọc sáu tên này. Kiểm: gửi `X-DZ-Customer-Ref: gia` tới tuyến `allow`; app không được thấy giá trị đó.
 - `allow_from` chỉ gồm mạng của proxy; cổng `gate.listen` không publish ra ngoài.
 
 ## Đã kiểm

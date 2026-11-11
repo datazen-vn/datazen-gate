@@ -178,6 +178,12 @@ func TestForwardAuthCheStatusChoNginx(t *testing.T) {
 	if res := goiFA(t, s, "/_dz/auth", h); res.StatusCode != 402 {
 		t.Fatalf("không che ⇒ nguyên phản hồi: %d", res.StatusCode)
 	}
+	// Qua Caddy/Traefik (có X-Forwarded-Method) header che bị bỏ qua.
+	h["X-Forwarded-Method"] = "GET"
+	if res := goiFA(t, s, "/_dz/auth", h); res.StatusCode != 402 {
+		t.Fatalf("có X-Forwarded-Method ⇒ không che: %d", res.StatusCode)
+	}
+	delete(h, "X-Forwarded-Method")
 	// Cho qua thì che không đổi gì: vẫn 200.
 	ok := dungFA(t, choQua("c", nil), nil)
 	h[HeaderCheStatus] = "1"

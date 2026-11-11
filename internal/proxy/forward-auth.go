@@ -62,7 +62,8 @@ func (h *forwardAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		h.ghi(w, r, bd, quyetdinh.KetQua{Quyet: quyetdinh.Quyet{LyDo: quyetdinh.LyDoForwardKhongTin, Status: ph.Status}, PhanHoi: ph})
 		return
 	}
-	che := r.Header.Get(HeaderCheStatus) == "1" // đọc TRƯỚC khi dungRequestAo xoá X-DZ-*
+	// Chỉ nginx (không có X-Forwarded-Method) được che: client qua Caddy/Traefik tự gửi header này không làm mất 302/402 của chính họ.
+	che := r.Header.Get(HeaderCheStatus) == "1" && len(r.Header.Values("X-Forwarded-Method")) == 0 // đọc TRƯỚC khi dungRequestAo xoá X-DZ-*
 	vr := h.dungRequestAo(r)
 	if vr == nil {
 		ph := quyetdinh.PhanHoiForwardSai(r.Method)
