@@ -4,7 +4,7 @@
 
 Do not open a public issue for a vulnerability.
 
-This repository does not take reports from outside the organization yet and has no public mailbox. Maintainers (see `CODEOWNERS`) report to each other directly and privately.
+Report it privately through GitHub: open the **Security** tab of this repository and choose **Report a vulnerability** (private vulnerability reporting). Only the maintainers (see `CODEOWNERS`) can read the report.
 
 Please include what you found, how to reproduce it, which version or commit is affected, and what you think the impact is. Remove real secrets and personal data from anything you send.
 

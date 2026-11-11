@@ -1,12 +1,12 @@
 <!-- dz-repo-type: service -->
 
-# market-gate
+# datazen-gate
 
 Standalone paywall gate in Go that sits in front of an existing app and checks DataZen subscription entitlements.
 
-**Status:** experimental · **Owner:** datazen-vn admins · **License:** Proprietary (all rights reserved)
+**Status:** experimental · **Owner:** datazen-vn admins · **License:** MIT
 
-Under construction; the repository stays private until the slice 2 end-to-end test is green. `dz-gate` stands in front of a developer's app, identifies the customer, asks the hub what the customer may use, and lets the request through or sends the customer to the checkout page. The app needs no code change.
+Under construction (`0.x`, strict semantic versioning: it runs on other people's machines). `dz-gate` stands in front of a developer's app, identifies the customer, asks the hub what the customer may use, and lets the request through or sends the customer to the checkout page. The app needs no code change.
 
 ## Quick start
 
@@ -64,11 +64,11 @@ Runbook: [docs/trien-khai.md](docs/trien-khai.md). Deploy as a container image; 
 
 ## Contracts & docs
 
-- Contracts: https://github.com/datazen-vn/market-meta (the `gate-v1` conformance suite)
+- Contracts: the `gate-v1` conformance suite lives in the internal contracts repository `datazen-vn/datazen-hub-meta`; `cong/kiem-conformance.sh` needs a checkout of it next to this one (`../meta` or `DZ_META_DIR`) and is run by the maintainers on every change
 - Docs: [configuration](docs/cau-hinh.md), [deployment](docs/trien-khai.md), [responses and metrics](docs/ma-loi.md), [changelog](CHANGELOG.md)
 
 ## License
 
-Proprietary. All rights reserved.
+MIT, see [LICENSE](LICENSE).
 
-Last updated: 2026-10-28
+Last updated: 2026-11-11

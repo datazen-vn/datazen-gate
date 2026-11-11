@@ -6,7 +6,7 @@
 > phải nằm cạnh nhau. Kéo bộ não về rồi để nó dựng lại đủ workspace:
 >
 > ```bash
-> git clone git@github.com:datazen-vn/market-meta.git ../meta
+> git clone git@github.com:datazen-vn/datazen-hub-meta.git ../meta   # kho nội bộ (private)
 > bash ../meta/workspace/clone-all.sh
 > ```
 
@@ -75,7 +75,7 @@ Không có CI chạy thật (workspace chốt 13/10): dán đầu ra ba cổng v
 
 ## Cạm bẫy đã biết
 
-**Công khai — semver nghiêm** (khi repo công khai, sau E2E lát 2): chạy trên máy người khác, không ép cập nhật được.
+**Công khai — semver nghiêm** (repo public từ 11/11/2026, MIT): chạy trên máy người khác, không ép cập nhật được.
 - Đệm URL phiên thanh toán: `replace_after − 30 s` (hub cũ `expires_at − 11 phút`). SDK và gate phải giống nhau (ca `checkout-url-cache-not-past-replace-after`).
 - "Đặt mốc trần đọc tươi" và "đăng ký lần gọi hub đang bay" phải nguyên tử (một lần giữ khoá ở `hub.Khach.Lay`); tách ra là race (ca `return-concurrent-*`).
 - `ReverseProxy` (Rewrite) bỏ tham số query không parse được (`;`) khỏi request tới upstream; quyết định tuyến chỉ dựa trên đường dẫn, không dựa query.
