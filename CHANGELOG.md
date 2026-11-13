@@ -10,8 +10,6 @@ Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm (r
 
 ### Thay đổi
 - **Đổi mặc định log**: trường `path` trước đây là đường dẫn thô; nay mặc định `ops.log_path: route` ghi mẫu tuyến đã khớp (`/dashboard/*`) hoặc `bypass` / `unmatched`, không còn đường dẫn thật. Muốn hành vi cũ đặt `ops.log_path: full` (vẫn bỏ query). `off` bỏ hẳn trường `path`.
-
-### Đổi
 - Đổi tên: module Go `github.com/datazen-vn/market-gate` → `github.com/datazen-vn/datazen-gate` (tên binary `dz-gate` giữ nguyên).
 - Ghim lại `gate-v1` theo meta main `f5728a0` (63 ca; schema.json: cổng pattern ≤ 255).
 - Go 1.26.10 (go.mod + image build): sửa GO-2026-6809 ở `crypto/x509` mà govulncheck bắt.

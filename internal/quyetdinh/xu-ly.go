@@ -37,7 +37,7 @@ type KetQua struct {
 	PhanHoi *PhanHoi
 	// Nguon: giá trị `X-DZ-Entitlement-Source` khi cho qua mà không có kết quả hub (vd danh tính không xác định nhưng fail_mode cho qua).
 	Nguon string
-	// Tuyen: nhãn tuyến đã khớp (xem tuyen.KetQua.Mau); rỗng khi yêu cầu bị chặn vòng lặp trước khi xét tuyến.
+	// Tuyen: nhãn tuyến đã khớp (xem tuyen.KetQua.Mau); "loop" khi yêu cầu bị chặn vòng lặp trước khi xét tuyến.
 	Tuyen string
 }
 
@@ -68,7 +68,7 @@ func (c *Cong) XuLy(ctx context.Context, r *http.Request) KetQua {
 	// 1. Đã qua gate một lần ⇒ vòng lặp: chặn trước mọi việc khác, không gọi hub/upstream.
 	if len(r.Header.Values(CongHopHeader)) > 0 {
 		q := Quyet{LyDo: LyDoVong, Status: http.StatusLoopDetected}
-		return KetQua{Quyet: q, PhanHoi: phanHoiLoi(r.Method, q.Status, MaVong)}
+		return KetQua{Quyet: q, PhanHoi: phanHoiLoi(r.Method, q.Status, MaVong), Tuyen: "loop"}
 	}
 	// 2. Bypass (webhook, login, trang quay lại thanh toán…) và tuyến không cần kiểm quyền.
 	tho := tuyen.DuongDanTho(r.RequestURI)
