@@ -123,7 +123,7 @@ func TestLogPathVongLapGhiLoop(t *testing.T) {
 	defer hubGia.Close()
 	up := httptest.NewServer(http.NotFoundHandler())
 	defer up.Close()
-	cfg, err := cauhinh.Doc(strings.NewReader(`{"gate": {"listen": ":18080", "upstream": "` + up.URL + `"}, "hub": {"base_url": "` + hubGia.URL + `"}}`))
+	cfg, err := cauhinh.Doc(strings.NewReader(`{"gate": {"listen": ":18080", "upstream": "` + up.URL + `"}, "hub": {"base_url": "` + hubGia.URL + `"}, "routes": [{"match": "/dashboard/*", "action": "require"}]}`))
 	if err != nil {
 		t.Fatal(err)
 	}
