@@ -30,7 +30,7 @@ khách ──TLS──▶ [LB / Caddy / Traefik]  ──HTTP──▶ dz-gate:80
 
 ## Header app nhận được
 
-Gate XOÁ khỏi request của client: `X-DZ-*`, `X-Auth-Request-*`, `X-Forwarded-User`, `Forwarded`, `X-Forwarded-*`, `X-Real-IP`, `True-Client-IP`, `CF-Connecting-IP`, `X-Original-URL`, `X-Rewrite-URL`, `X-Original-Host` và các biến thể (xem [cấu hình](cau-hinh.md)); BỎ mọi header có `_` trong tên (trừ khi `inject.allow_underscore_headers`). Rồi đặt `X-Forwarded-For/-Host/-Proto` từ kết nối thật (sau LB, `X-Forwarded-For` là IP của LB: `trusted_proxies` là follow-up) và tiêm `X-DZ-Customer-Ref`, `X-DZ-Entitlement-Status`, `X-DZ-Plan`, `X-DZ-Features`, `X-DZ-Grace-Until`, `X-DZ-Entitlement-Source`, `X-DZ-Gate-Hop: 1`.
+Gate XOÁ khỏi request của client: `X-DZ-*`, `X-Auth-Request-*`, `X-Forwarded-User`, `Forwarded`, `X-Forwarded-*`, `X-Real-IP`, `True-Client-IP`, `CF-Connecting-IP`, `X-Original-URL`, `X-Rewrite-URL`, `X-Original-Host` và các biến thể (xem [cấu hình](cau-hinh.md)); BỎ mọi header có `_` trong tên (trừ khi `inject.allow_underscore_headers`). Rồi đặt `X-Forwarded-For/-Host/-Proto` từ kết nối thật (mặc định sau LB, `X-Forwarded-For` là IP của LB; khai `gate.trusted_proxies` để lấy IP khách thật, xem [cấu hình](cau-hinh.md)) và tiêm `X-DZ-Customer-Ref`, `X-DZ-Entitlement-Status`, `X-DZ-Plan`, `X-DZ-Features`, `X-DZ-Grace-Until`, `X-DZ-Entitlement-Source`, `X-DZ-Gate-Hop: 1`.
 
 `Host` gửi upstream là host của upstream (không phải Host gốc của client): app định tuyến theo vhost cần biết; host gốc đã xác thực nằm ở `X-Forwarded-Host`. Đường dẫn và query được chuyển NGUYÊN VĂN (trừ tham số query không parse được, `ReverseProxy` bỏ). Không có `ReadTimeout` cho thân request (upload/streaming dài): chặn ở lớp trước nếu cần.
 
@@ -55,4 +55,4 @@ Gate XOÁ khỏi request của client: `X-DZ-*`, `X-Auth-Request-*`, `X-Forwarde
 ## Chưa hỗ trợ (follow-up có chủ)
 
 - **Chế độ forward-auth** (`GET /_dz/auth` cho Caddy `forward_auth`/Traefik ForwardAuth/nginx `auth_request`): chưa viết. Dùng chế độ proxy; nếu đã có Caddy/Traefik/nginx, đặt chúng TRƯỚC dz-gate như sơ đồ trên.
-- `trusted_proxies` (tin `X-Forwarded-*` của LB đã khai), tuỳ chọn tắt log đường dẫn, publish image (chờ ADR-0002).
+- Tuỳ chọn tắt log đường dẫn, publish image (chờ ADR-0002).

@@ -254,3 +254,35 @@ func TestCanhBaoChoPhepHeaderGachDuoi(t *testing.T) {
 		t.Fatalf("phải cảnh báo: %v", kq.Cac)
 	}
 }
+
+func TestKiemTrustedProxies(t *testing.T) {
+	co := func(ds []string, muc string) bool {
+		c := docMau(t)
+		c.Gate.TrustedProxies = ds
+		for _, v := range Kiem(c, envTest).Cac {
+			if v.Truong == "gate.trusted_proxies" && v.Muc == muc {
+				return true
+			}
+		}
+		return false
+	}
+	if co([]string{"10.0.0.0/8", "2001:db8::/32", "192.0.2.1", "::1"}, MucLoi) || co(nil, MucLoi) {
+		t.Fatal("CIDR/IP hợp lệ và rỗng không được lỗi")
+	}
+	if ps, _ := ParseTrustedProxies([]string{"::ffff:10.0.0.0/104"}); len(ps) != 1 || ps[0].String() != "10.0.0.0/8" {
+		t.Fatalf("prefix IPv4-mapped phải gỡ về IPv4: %v", ps)
+	}
+	for _, bad := range []string{"rac", "10.0.0.0/33", "", "fe80::1%eth0", "10.0.0.0/8/1"} {
+		if !co([]string{bad}, MucLoi) {
+			t.Fatalf("%q phải là lỗi", bad)
+		}
+	}
+	for _, rong := range []string{"0.0.0.0/0", "::/0"} {
+		if !co([]string{rong}, MucCanhBao) || co([]string{rong}, MucLoi) {
+			t.Fatalf("%s phải cảnh báo, không lỗi", rong)
+		}
+	}
+	if co([]string{"10.0.0.0/8"}, MucCanhBao) {
+		t.Fatal("dải hẹp không cảnh báo")
+	}
+}
