@@ -120,6 +120,9 @@ type Inject struct {
 type Ops struct {
 	Listen         string `yaml:"listen"`
 	LogCustomerRef string `yaml:"log_customer_ref"` // hash (mặc định) | none
+	// LogPath: trường `path` trong log mỗi request. route (mặc định) = mẫu tuyến đã khớp / "bypass" / "unmatched"; full = đường dẫn thô
+	// (luôn bỏ query); off = không có trường path. Đường dẫn có thể mang dữ liệu cá nhân (email, mã đơn, token) của khách cuối.
+	LogPath string `yaml:"log_path"`
 }
 
 // Doc đọc YAML (hoặc JSON — tập con của YAML) NGHIÊM: trường lạ là lỗi (gõ sai `fail_mod` không âm thầm bị bỏ qua), nhiều tài liệu
@@ -171,6 +174,9 @@ func (c *Config) MacDinh() {
 	}
 	if c.Ops.Listen == "" {
 		c.Ops.Listen = "127.0.0.1:9090"
+	}
+	if c.Ops.LogPath == "" {
+		c.Ops.LogPath = "route"
 	}
 	if c.Ops.LogCustomerRef == "" {
 		c.Ops.LogCustomerRef = "hash"

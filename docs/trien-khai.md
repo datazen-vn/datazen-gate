@@ -55,4 +55,4 @@ Gate XOÁ khỏi request của client: `X-DZ-*`, `X-Auth-Request-*`, `X-Forwarde
 ## Chưa hỗ trợ (follow-up có chủ)
 
 - **Chế độ forward-auth** (`GET /_dz/auth` cho Caddy `forward_auth`/Traefik ForwardAuth/nginx `auth_request`): chưa viết. Dùng chế độ proxy; nếu đã có Caddy/Traefik/nginx, đặt chúng TRƯỚC dz-gate như sơ đồ trên.
-- Tuỳ chọn tắt log đường dẫn, publish image (chờ ADR-0002).
+- Publish image (chờ ADR-0002).

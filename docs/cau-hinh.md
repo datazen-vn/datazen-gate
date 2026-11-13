@@ -103,5 +103,6 @@ Header gate tiêm cho upstream: `X-DZ-Customer-Ref`, `X-DZ-Entitlement-Status`, 
 |---|---|---|
 | `listen` | `127.0.0.1:9090` | bind RIÊNG, ≠ `gate.listen`. Trong docker giữ `127.0.0.1:9090`; không bao giờ `0.0.0.0` (bind cả mạng nội bộ lẫn mạng ngoài). Không phải loopback ⇒ `--check` cảnh báo (không lỗi) |
 | `log_customer_ref` | `hash` | `hash` (`sha256(salt‖ref)[:16]`, salt ngẫu nhiên mỗi tiến trình) hoặc `none`; không bao giờ log ref thô |
+| `log_path` | `route` | trường `path` trong log mỗi request. `route`: mẫu tuyến đã khớp trong `routes` (vd `/dashboard/*`), hoặc `bypass` / `unmatched` — KHÔNG ghi đường dẫn thật (đường dẫn có thể mang email, mã đơn, token của khách cuối). `full`: đường dẫn thô, luôn bỏ query, cắt 200 ký tự. `off`: không có trường `path`. Giá trị khác ⇒ `--check` lỗi. Metrics Prometheus không bao giờ dùng đường dẫn làm nhãn |
 
 Cổng vận hành: `/_dz/healthz` (tiến trình sống), `/_dz/readyz` (upstream TCP + hub/khoá API, đệm 5 s, 503 khi chưa sẵn sàng), `/_dz/metrics` (Prometheus).
