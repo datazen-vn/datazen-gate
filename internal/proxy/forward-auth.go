@@ -113,6 +113,11 @@ func (h *forwardAuth) tin(remote string) bool {
 // dungRequestAo dựng request mà khách thật đã gửi tới proxy: giữ nguyên header (Cookie/Authorization/Accept/Sec-Fetch-Mode… do proxy
 // chép sang) nhưng đổi method/host/đường dẫn thô theo header của proxy. nil ⇒ thiếu/hỏng.
 func (h *forwardAuth) dungRequestAo(r *http.Request) *http.Request {
+	// Hai họ header (Traefik/Caddy `X-Forwarded-*` và nginx `X-Original-*`) không bao giờ đến cùng lúc từ một proxy thật:
+	// có cả hai ⇒ client tự chèn một họ để lái quyết định sang tuyến khác ⇒ từ chối.
+	if coHeader(r.Header, "X-Forwarded-Uri", "X-Forwarded-Method") && coHeader(r.Header, "X-Original-Uri", "X-Original-Method") {
+		return nil
+	}
 	uri := dau(r.Header, "X-Forwarded-Uri", "X-Original-Uri")
 	host := strings.ToLower(dau(r.Header, "X-Forwarded-Host", "X-Original-Host"))
 	if !uriHopLe(uri) || !h.khopCongKhai(host) {
@@ -142,6 +147,16 @@ func (h *forwardAuth) khopCongKhai(host string) bool {
 	}
 	for _, o := range h.cau.CongKhai {
 		if o.Host == host {
+			return true
+		}
+	}
+	return false
+}
+
+// coHeader: có ít nhất một header trong danh sách (kể cả giá trị rỗng).
+func coHeader(h http.Header, ten ...string) bool {
+	for _, t := range ten {
+		if len(h.Values(t)) > 0 {
 			return true
 		}
 	}

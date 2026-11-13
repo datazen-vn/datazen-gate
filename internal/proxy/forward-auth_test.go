@@ -138,6 +138,29 @@ func TestForwardAuthTuChoiKhongGoiLoi(t *testing.T) {
 			t.Fatalf("thiếu host: %d", res.StatusCode)
 		}
 	})
+	// nginx thật nhưng client tự gửi X-Forwarded-Uri/-Method giả: không được thắng X-Original-URI ⇒ 400, không gọi lõi.
+	for ten, them := range map[string]map[string]string{
+		"X-Forwarded-Uri giả":    {"X-Forwarded-Uri": "/public/x"},
+		"X-Forwarded-Method giả": {"X-Forwarded-Method": "OPTIONS"},
+		"cả hai giả":             {"X-Forwarded-Uri": "/public/x", "X-Forwarded-Method": "GET"},
+	} {
+		t.Run("nginx + "+ten+" ⇒ 400", func(t *testing.T) {
+			h := nguoc(kieuProxy["nginx"], "")
+			for a, b := range them {
+				h[a] = b
+			}
+			if res := goiFA(t, s, "/_dz/auth", h); res.StatusCode != 400 {
+				t.Fatalf("%d", res.StatusCode)
+			}
+		})
+	}
+	t.Run("traefik + X-Original-URI giả ⇒ 400", func(t *testing.T) {
+		h := nguoc(kieuProxy["traefik"], "")
+		h["X-Original-URI"] = "/public/x"
+		if res := goiFA(t, s, "/_dz/auth", h); res.StatusCode != 400 {
+			t.Fatalf("%d", res.StatusCode)
+		}
+	})
 	t.Run("đường dẫn khác /_dz/auth ⇒ 404", func(t *testing.T) {
 		if res := goiFA(t, s, "/_dz/healthz", kieuProxy["traefik"]); res.StatusCode != 404 {
 			t.Fatalf("%d", res.StatusCode)

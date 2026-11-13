@@ -86,6 +86,8 @@ location = /_dz_auth {
     proxy_set_header X-Original-URI $request_uri;
     proxy_set_header X-Original-Method $request_method;
     proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Uri "";       # xoá bản của client: gate trả 400 nếu thấy cả X-Forwarded-Uri/-Method lẫn X-Original-*
+    proxy_set_header X-Forwarded-Method "";
     proxy_set_header X-DZ-Auth-Mask 1;
 }
 
@@ -97,6 +99,8 @@ location @dz_verdict {                       # phản hồi thật (302/402/503)
     proxy_set_header X-Original-URI $request_uri;
     proxy_set_header X-Original-Method $request_method;
     proxy_set_header X-Forwarded-Host $host;
+    proxy_set_header X-Forwarded-Uri "";       # xoá bản của client: gate trả 400 nếu thấy cả X-Forwarded-Uri/-Method lẫn X-Original-*
+    proxy_set_header X-Forwarded-Method "";
 }
 
 location / {
