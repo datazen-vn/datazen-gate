@@ -82,5 +82,4 @@ Không có CI chạy thật (workspace chốt 13/10): dán đầu ra ba cổng v
 
 ## Việc để sau (follow-up có chủ)
 
-- Tuỳ chọn tắt log đường dẫn (đường dẫn dạng `/invite/<token>` vẫn vào log).
 - Các mục THẤP L1–L5 của `reports/panel-261014-1030-gate1-sec.md` (`%00`/`%20` cuối đoạn, `e` JWK dài, cảnh báo `secret` viết thẳng, thông báo lộ upstream, lệch nhỏ SDK/gate khi chạm trần).
