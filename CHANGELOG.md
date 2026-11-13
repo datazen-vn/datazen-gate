@@ -8,6 +8,10 @@ Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm (r
 - Workflow `phat-hanh.yml`: tag `v*` ⇒ build linux/darwin x amd64/arm64 (`-trimpath`, phiên bản qua ldflags), ghi `SHA256SUMS`, tạo GitHub release. Mục "Tải bản dựng" trong README và `docs/trien-khai.md`.
 - `gate.trusted_proxies`: tin `X-Forwarded-For`/`-Proto` của load balancer đã khai (chỉ khi kết nối từ dải đó; mặc định rỗng = hành vi cũ). `--check` báo lỗi CIDR sai, cảnh báo `0.0.0.0/0`/`::/0`.
 - Chế độ `gate.mode: forward-auth`: `GET /_dz/auth` cho Caddy `forward_auth`, Traefik ForwardAuth, nginx `auth_request`. Dựng request ảo từ `X-Forwarded-Method/-Host/-Uri` hoặc `X-Original-URI/-Method`, dùng đúng lõi quyết định của chế độ proxy (200 + `X-DZ-*` hoặc 302/401/402/503 cùng thân/`Retry-After`). Chỉ tin proxy trong `gate.forward_auth.allow_from` (403 `dz_forward_untrusted`, không gọi hub); thiếu/hỏng URI hoặc Host ngoài `paywall.public_origins` ⇒ 400 `dz_forward_bad_request`. Hướng dẫn: `docs/forward-auth.md`.
+- `ops.log_path` (`full` | `route` | `off`): chọn cách ghi đường dẫn trong log request. `--check` báo giá trị lạ.
+
+### Thay đổi
+- **Đổi mặc định log**: trường `path` trước đây là đường dẫn thô; nay mặc định `ops.log_path: route` ghi mẫu tuyến đã khớp (`/dashboard/*`) hoặc `bypass` / `unmatched`, không còn đường dẫn thật. Muốn hành vi cũ đặt `ops.log_path: full` (vẫn bỏ query). `off` bỏ hẳn trường `path`.
 
 ### Đổi
 - Đổi tên: module Go `github.com/datazen-vn/market-gate` → `github.com/datazen-vn/datazen-gate` (tên binary `dz-gate` giữ nguyên).
@@ -33,4 +37,4 @@ Cổng paywall độc lập (reverse proxy Go) cho app có sẵn gắn thuê bao
 - Danh tính không xác định ⇒ 503 + `Retry-After`, không bao giờ fail-open; hỏi lại sau 409 chịu trần, không xoá đệm quyền (không vòng đốt hạn mức khoá API); đệm âm JWKS.
 
 ### Chưa có
-- Chế độ forward-auth, tuỳ chọn tắt log đường dẫn.
+- Chế độ forward-auth.
