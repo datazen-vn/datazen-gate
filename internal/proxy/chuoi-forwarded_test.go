@@ -31,6 +31,7 @@ func TestTrustedProxiesXFF(t *testing.T) {
 		{"LB tin: giả XFF phía trái bị bỏ", loopback, []string{"6.6.6.6, 203.0.113.9"}, "", "203.0.113.9", "http"},
 		{"nhiều hop, bỏ hop tin cậy", []string{"127.0.0.0/8", "10.0.0.0/8"}, []string{"198.51.100.7, 10.1.1.1, 10.2.2.2"}, "", "198.51.100.7", "http"},
 		{"nhiều dòng header", []string{"127.0.0.0/8", "10.0.0.0/8"}, []string{"1.1.1.1", "198.51.100.7, 10.1.1.1"}, "", "198.51.100.7", "http"},
+		{"token có cổng", loopback, []string{"203.0.113.9:4711"}, "", "203.0.113.9", "http"},
 		{"IPv6 khách", loopback, []string{"2001:db8::1"}, "", "2001:db8::1", "http"},
 		{"IPv6 hop tin cậy", []string{"127.0.0.0/8", "2001:db8:ffff::/48"}, []string{"192.0.2.5, 2001:db8:ffff::7"}, "", "192.0.2.5", "http"},
 		{"IPv4-mapped IPv6", loopback, []string{"::ffff:203.0.113.9"}, "", "203.0.113.9", "http"},
@@ -100,5 +101,42 @@ func TestTrustedProxiesHostVanTheoPublicOrigins(t *testing.T) {
 	got := u.cuoi(t).Header
 	if got.Get("X-Forwarded-Host") != "app.test" || got.Get("X-Forwarded-Proto") != "https" || got.Get("X-Forwarded-For") != "203.0.113.9" {
 		t.Fatalf("sai: %v", got)
+	}
+}
+
+// Origin https nhưng LB tin cậy báo http ⇒ upstream nhận http (proto của LB đặt SAU origin); Host vẫn là origin.
+func TestTrustedProxiesProtoLBThangOrigin(t *testing.T) {
+	u := moiUpstream(t, nil)
+	s := dungProxy(t, u, choQua("c", nil), func(c *Cau) {
+		c.TrustedProxies = cidr(t, "127.0.0.0/8")
+		c.CongKhai = []Origin{{Scheme: "https", Host: "app.test"}}
+	})
+	req, _ := http.NewRequest("GET", s.URL+"/x", nil)
+	req.Header.Set("X-Forwarded-Host", "ke-tan-cong.test")
+	req.Header.Set("X-Forwarded-Proto", "http")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	got := u.cuoi(t).Header
+	if got.Get("X-Forwarded-Proto") != "http" || got.Get("X-Forwarded-Host") != "app.test" {
+		t.Fatalf("sai: %v", got)
+	}
+}
+
+func TestIPKetNoiVaTokenCoCong(t *testing.T) {
+	for in, want := range map[string]string{"[::1]:1234": "::1", "127.0.0.1:9": "127.0.0.1", "[::ffff:10.1.2.3]:5": "10.1.2.3"} {
+		if a, ok := ipKetNoi(in); !ok || a.String() != want {
+			t.Fatalf("ipKetNoi(%q)=%v,%v", in, a, ok)
+		}
+	}
+	for in, want := range map[string]string{"203.0.113.9:4000": "203.0.113.9", "[2001:db8::1]:80": "2001:db8::1", "2001:db8::1": "2001:db8::1"} {
+		if a, ok := phanTichTokenXFF(in); !ok || a.String() != want {
+			t.Fatalf("phanTichTokenXFF(%q)=%v,%v", in, a, ok)
+		}
+	}
+	if _, ok := phanTichTokenXFF("abc:80"); ok {
+		t.Fatal("rác phải hỏng")
 	}
 }

@@ -269,6 +269,9 @@ func TestKiemTrustedProxies(t *testing.T) {
 	if co([]string{"10.0.0.0/8", "2001:db8::/32", "192.0.2.1", "::1"}, MucLoi) || co(nil, MucLoi) {
 		t.Fatal("CIDR/IP hợp lệ và rỗng không được lỗi")
 	}
+	if ps, _ := ParseTrustedProxies([]string{"::ffff:10.0.0.0/104"}); len(ps) != 1 || ps[0].String() != "10.0.0.0/8" {
+		t.Fatalf("prefix IPv4-mapped phải gỡ về IPv4: %v", ps)
+	}
 	for _, bad := range []string{"rac", "10.0.0.0/33", "", "fe80::1%eth0", "10.0.0.0/8/1"} {
 		if !co([]string{bad}, MucLoi) {
 			t.Fatalf("%q phải là lỗi", bad)

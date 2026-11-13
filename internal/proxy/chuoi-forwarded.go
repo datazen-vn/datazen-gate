@@ -52,8 +52,8 @@ func (h *handler) ipKhachTuLB(in *http.Request) (netip.Addr, bool) {
 	toks := strings.Split(gop, ",")
 	var khach netip.Addr
 	for i := len(toks) - 1; i >= 0; i-- {
-		a, err := netip.ParseAddr(strings.TrimSpace(toks[i]))
-		if err != nil {
+		a, ok := phanTichTokenXFF(strings.TrimSpace(toks[i]))
+		if !ok {
 			return netip.Addr{}, false
 		}
 		a = a.Unmap().WithZone("")
@@ -81,4 +81,15 @@ func (h *handler) protoTuLB(in *http.Request) string {
 		return p
 	}
 	return ""
+}
+
+// phanTichTokenXFF: IP trần, hoặc dạng có cổng (`1.2.3.4:80`, `[2001:db8::1]:80` — Azure App Gateway…); bỏ cổng.
+func phanTichTokenXFF(s string) (netip.Addr, bool) {
+	if a, err := netip.ParseAddr(s); err == nil {
+		return a.Unmap().WithZone(""), true
+	}
+	if ap, err := netip.ParseAddrPort(s); err == nil {
+		return ap.Addr().Unmap().WithZone(""), true
+	}
+	return netip.Addr{}, false
 }

@@ -317,6 +317,45 @@ func TestLapNoiAllowUnderscoreHeaders(t *testing.T) {
 	}
 }
 
+// gate.trusted_proxies: YAML → Lap → proxy. Khai dải chứa kết nối ⇒ upstream nhận IP khách từ XFF; không khai ⇒ IP kết nối.
+func TestLapNoiTrustedProxies(t *testing.T) {
+	for _, khai := range []bool{false, true} {
+		var nhan http.Header
+		up := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { nhan = r.Header.Clone() }))
+		tp := ""
+		if khai {
+			tp = `, "trusted_proxies": ["127.0.0.0/8"]`
+		}
+		cfg, err := cauhinh.Doc(strings.NewReader(`{
+		  "gate": {"listen": ":18084", "upstream": "` + up.URL + `"` + tp + `}, "hub": {"base_url": "http://127.0.0.1:1"},
+		  "routes": [{"match": "/dashboard/*", "action": "require"}],
+		  "paywall": {"plan_code": "pro", "public_origins": ["https://app.test"]}}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		cfg.MacDinh()
+		cfg.Identity = []cauhinh.Identity{{Type: "jwt", Secret: strings.Repeat("s", 32), Issuer: "i", Audience: "a"}}
+		d, err := Lap(cfg, TuyChon{Env: envOK, PhienBan: "t"})
+		if err != nil {
+			t.Fatal(err)
+		}
+		s := httptest.NewServer(d.Chinh)
+		req, _ := http.NewRequest("GET", s.URL+"/mo", nil)
+		req.Header.Set("X-Forwarded-For", "203.0.113.9")
+		res, _ := http.DefaultClient.Do(req)
+		res.Body.Close()
+		s.Close()
+		up.Close()
+		muon := "127.0.0.1"
+		if khai {
+			muon = "203.0.113.9"
+		}
+		if nhan.Get("X-Forwarded-For") != muon {
+			t.Errorf("trusted_proxies khai=%v: XFF=%q, muốn %q", khai, nhan.Get("X-Forwarded-For"), muon)
+		}
+	}
+}
+
 // DZ_API_KEY_FILE: khoá đọc từ tệp (Docker/Kubernetes secrets) phải tới hub y như khoá từ biến môi trường, và --check chấp nhận nó.
 func TestKhoaApiTuTepToiHubVaCheckChapNhan(t *testing.T) {
 	const khoa = "dz_test_khoa-tu-tep-abc123"

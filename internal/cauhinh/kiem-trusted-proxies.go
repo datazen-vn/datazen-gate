@@ -2,7 +2,7 @@ package cauhinh
 
 import "net/netip"
 
-// ParseTrustedProxies đổi danh sách CIDR/IP đơn thành prefix (IP đơn = /32 hoặc /128; IPv4-mapped IPv6 được gỡ về IPv4).
+// ParseTrustedProxies đổi danh sách CIDR/IP đơn thành prefix (IP đơn = /32 hoặc /128; IPv4-mapped IPv6 (cả IP đơn lẫn prefix /96+) được gỡ về IPv4).
 // Dùng chung cho Kiem (báo lỗi) và chay.Lap (dựng proxy). Lỗi ở phần tử nào trả kèm chỉ số.
 func ParseTrustedProxies(ds []string) ([]netip.Prefix, []int) {
 	var ps []netip.Prefix
@@ -20,6 +20,10 @@ func ParseTrustedProxies(ds []string) ([]netip.Prefix, []int) {
 		if p.Addr().Zone() != "" {
 			hong = append(hong, i)
 			continue
+		}
+		// Prefix IPv4-mapped (::ffff:a.b.c.d/N, N ≥ 96) gỡ về IPv4 (/N-96) cho khớp địa chỉ đã gỡ ở proxy.
+		if a := p.Addr(); a.Is4In6() && p.Bits() >= 96 {
+			p = netip.PrefixFrom(a.Unmap(), p.Bits()-96)
 		}
 		ps = append(ps, p.Masked())
 	}
