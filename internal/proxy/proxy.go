@@ -5,6 +5,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"net/netip"
 	"net/url"
 	"strings"
 	"time"
@@ -30,6 +31,9 @@ type Cau struct {
 	CongKhai []Origin
 	// GiuGachDuoi: true ⇒ KHÔNG bỏ header gạch dưới của client (mặc định false: bỏ hết, xem BoHeaderGachDuoi). Header danh tính vẫn bị xoá.
 	GiuGachDuoi bool
+	// TrustedProxies: dải IP của LB/CDN đứng ngay trước gate (gate.trusted_proxies). Rỗng ⇒ không tin X-Forwarded-* của ai. Có ⇒ chỉ kết nối
+	// từ các dải này được tin X-Forwarded-For (IP khách) và X-Forwarded-Proto (http|https); Host vẫn theo CongKhai.
+	TrustedProxies []netip.Prefix
 	// Transport tới upstream; nil ⇒ DungTransport().
 	Transport http.RoundTripper
 	// QuanSat nhận kết quả của MỌI request (cho log/metric) sau khi xong; không được chặn lâu. nil = bỏ.
@@ -93,10 +97,16 @@ func (h *handler) viet(pr *httputil.ProxyRequest) {
 	}
 	XoaHeader(pr.Out.Header, h.cau.Xoa)
 	pr.SetXForwarded()
+	if ip, ok := h.ipKhachTuLB(pr.In); ok {
+		pr.Out.Header.Set("X-Forwarded-For", ip.String()) // thay (không nối) chuỗi client gửi: chỉ giữ IP khách đã suy ra
+	}
 	if len(h.cau.CongKhai) > 0 {
 		o := h.congKhaiCua(pr.In.Host)
 		pr.Out.Header.Set("X-Forwarded-Host", o.Host)
 		pr.Out.Header.Set("X-Forwarded-Proto", o.Scheme) // gate nghe HTTP sau bộ kết thúc TLS: scheme thật của mặt công khai là của origin
+	}
+	if p := h.protoTuLB(pr.In); p != "" {
+		pr.Out.Header.Set("X-Forwarded-Proto", p) // LB đã khai biết scheme thật phía khách
 	}
 	TiemHeader(pr.Out.Header, kq)
 }

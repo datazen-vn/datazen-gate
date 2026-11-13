@@ -51,6 +51,9 @@ type Gate struct {
 	Listen   string `yaml:"listen"`
 	Upstream string `yaml:"upstream"`
 	Mode     string `yaml:"mode"` // proxy
+	// TrustedProxies: CIDR (hoặc IP đơn) của load balancer/CDN đứng ngay trước gate. Rỗng (mặc định) = không tin ai: X-Forwarded-* của
+	// client luôn bị xoá, IP khách = kết nối trực tiếp. Chỉ kết nối TỚI TỪ các dải này mới được tin X-Forwarded-For/-Proto.
+	TrustedProxies []string `yaml:"trusted_proxies"`
 }
 
 // Hub: kết nối tới hub DataZen.

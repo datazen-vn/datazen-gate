@@ -16,7 +16,7 @@ import (
 //   - danh tính/quyền (`x-dz-*`, `x-auth-request-*`, `x-forwarded-user`): upstream tin chúng;
 //   - nguồn gốc kết nối do client tự khai (`forwarded`, `x-forwarded-*` MỌI biến thể kể cả -port/-prefix/-ssl/-scheme/-server, `x-real-ip`,
 //     `true-client-ip`, `cf-connecting-ip`…): app tin chúng để dựng IP/URL/ratelimit. Gate xoá TRƯỚC rồi mới tự đặt X-Forwarded-For/-Host/
-//     -Proto từ kết nối thật (không tin LB: xem follow-up `trusted_proxies`);
+//     -Proto từ kết nối thật (chỉ tin LB khi khai `gate.trusted_proxies`);
 //   - ghi đè ĐƯỜNG DẪN/HOST (`x-original-url`, `x-rewrite-url`, `x-original-uri`, `x-original-host`, `x-host`, `x-http-host-override`): một số
 //     framework (Zend/Laminas, Symfony cũ CVE-2018-14773, IIS rewrite) định tuyến theo chúng ⇒ gate xét `/public` còn app chạy `/premium/x`.
 var XoaMacDinh = []string{

@@ -12,7 +12,7 @@ Under construction (`0.x`, strict semantic versioning: it runs on other people's
 
 Experimental and private. It goes public only after the slice-2 E2E passes: the gate in front of an app without the SDK, on the platform `deploy/saas-e2e` stack.
 
-Not yet available: `forward-auth` mode, `trusted_proxies` (trust `X-Forwarded-*` from a declared load balancer), an option to turn off path logging.
+Not yet available: `forward-auth` mode, an option to turn off path logging.
 
 ## Quick start
 

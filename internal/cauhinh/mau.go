@@ -6,6 +6,7 @@ gate:
   listen: ":8080"
   upstream: "http://app:3000"
   mode: proxy
+  # trusted_proxies: ["10.0.0.0/8"]  # dải IP của LB/CDN đứng ngay trước gate: chỉ kết nối từ đây được tin X-Forwarded-For/-Proto. Mặc định rỗng
 
 hub:
   base_url: "https://api.datazen.vn"

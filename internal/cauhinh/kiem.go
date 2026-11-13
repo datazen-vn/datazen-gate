@@ -100,6 +100,7 @@ func kiemGate(k *KetQuaKiem, c *Config) {
 	case ok && gateTuTroVaoMinh(host, port, u):
 		k.loi("gate.upstream", "trùng với gate.listen (%s): gate sẽ tự proxy chính nó", c.Gate.Listen)
 	}
+	kiemTrustedProxies(k, c.Gate.TrustedProxies)
 }
 
 // gateTuTroVaoMinh: upstream cùng cổng với listen và host là loopback/địa chỉ trống ⇒ vòng lặp.

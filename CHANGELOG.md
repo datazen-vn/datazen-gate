@@ -4,6 +4,9 @@ Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm (r
 
 ## [Chưa phát hành]
 
+### Thêm
+- `gate.trusted_proxies`: tin `X-Forwarded-For`/`-Proto` của load balancer đã khai (chỉ khi kết nối từ dải đó; mặc định rỗng = hành vi cũ). `--check` báo lỗi CIDR sai, cảnh báo `0.0.0.0/0`/`::/0`.
+
 ### Đổi
 - Đổi tên: module Go `github.com/datazen-vn/market-gate` → `github.com/datazen-vn/datazen-gate` (tên binary `dz-gate` giữ nguyên).
 - Ghim lại `gate-v1` theo meta main `f5728a0` (63 ca; schema.json: cổng pattern ≤ 255).
@@ -28,4 +31,4 @@ Cổng paywall độc lập (reverse proxy Go) cho app có sẵn gắn thuê bao
 - Danh tính không xác định ⇒ 503 + `Retry-After`, không bao giờ fail-open; hỏi lại sau 409 chịu trần, không xoá đệm quyền (không vòng đốt hạn mức khoá API); đệm âm JWKS.
 
 ### Chưa có
-- Chế độ forward-auth, `trusted_proxies`, tuỳ chọn tắt log đường dẫn.
+- Chế độ forward-auth, tuỳ chọn tắt log đường dẫn.

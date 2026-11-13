@@ -20,6 +20,7 @@ Tệp gắn vào container phải **đọc được bởi uid 65532** (nonroot) 
 | `listen` | (bắt buộc) | `host:port` hoặc `:port`, cổng 1–65535 |
 | `upstream` | (bắt buộc) | URL `http(s)://host[:port]` của app, không `user:password`; **không** được trỏ về chính `listen` (gate tự proxy chính nó) |
 | `mode` | `proxy` | chỉ `proxy` (forward-auth: chưa hỗ trợ, xem [triển khai](trien-khai.md)) |
+| `trusted_proxies` | `[]` | CIDR/IP đơn (IPv4/IPv6) của LB/CDN đứng ngay trước gate. Rỗng = không tin ai (IP khách = kết nối trực tiếp). Có ⇒ chỉ kết nối từ các dải này được tin `X-Forwarded-For` (phải→trái, bỏ hop tin cậy, IP không tin đầu tiên = khách; gate đặt lại header = IP đó) và `X-Forwarded-Proto` (`http`/`https`). Hỏng/quá 1 KiB ⇒ dùng IP kết nối. `--check`: sai CIDR là lỗi; `0.0.0.0/0`/`::/0` cảnh báo (ai cũng giả được IP) |
 
 ## `hub`
 
