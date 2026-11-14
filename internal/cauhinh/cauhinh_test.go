@@ -120,6 +120,7 @@ func TestKiemTungLuat(t *testing.T) {
 		{"strip sai khuôn", func(c *Config) { c.Inject.StripIncoming = []string{"X-Foo"} }, nil, "inject.strip_incoming[0]"},
 		{"ops.listen sai", func(c *Config) { c.Ops.Listen = "9090" }, nil, "ops.listen"},
 		{"ops.listen = gate.listen", func(c *Config) { c.Ops.Listen = ":8080" }, nil, "ops.listen"},
+		{"log_path lạ", func(c *Config) { c.Ops.LogPath = "raw" }, nil, "ops.log_path"},
 		{"log_customer_ref lạ", func(c *Config) { c.Ops.LogCustomerRef = "raw" }, nil, "ops.log_customer_ref"},
 	}
 	for _, c := range cacTruongHop {

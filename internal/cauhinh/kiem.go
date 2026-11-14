@@ -207,6 +207,9 @@ func kiemInjectOps(k *KetQuaKiem, c *Config) {
 	} else if !laLoopback(host) {
 		k.canh("ops.listen", "%q không phải loopback: metrics/readyz mở cho mọi thứ tới được địa chỉ đó (trong docker, 0.0.0.0 bind cả mạng nội bộ lẫn mạng ngoài); giữ 127.0.0.1 và không publish cổng này", c.Ops.Listen)
 	}
+	if c.Ops.LogPath != "full" && c.Ops.LogPath != "route" && c.Ops.LogPath != "off" {
+		k.loi("ops.log_path", "phải là full, route hoặc off, nhận %q", c.Ops.LogPath)
+	}
 	if c.Ops.LogCustomerRef != "hash" && c.Ops.LogCustomerRef != "none" {
 		k.loi("ops.log_customer_ref", "phải là hash hoặc none (không bao giờ log customer_ref thô), nhận %q", c.Ops.LogCustomerRef)
 	}

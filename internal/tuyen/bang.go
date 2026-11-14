@@ -8,6 +8,7 @@ var BypassMacDinh = []string{"/api/dz/*", "/_dz/*"}
 // khi MỌI dạng cùng ra bypass (xem GiaiTuyen).
 type Bang struct {
 	dong    []Dong
+	nBypass int    // số dòng đầu bảng là bypass
 	macDinh string // Cho | Can
 }
 
@@ -21,6 +22,7 @@ func TaoBang(bypass []string, routes []Dong, macDinh string) *Bang {
 	for _, m := range bypass {
 		b.dong = append(b.dong, Dong{Khop: m, HanhDong: Cho})
 	}
+	b.nBypass = len(b.dong)
 	b.dong = append(b.dong, routes...)
 	return b
 }
@@ -31,15 +33,28 @@ type KetQua struct {
 	Qua bool
 	// Dong là dòng chi phối khi Qua = false (Can hoặc Mem); nil = tuyến mặc định `require` không feature.
 	Dong *Dong
+	// Mau: nhãn tuyến cho log/metric (tập hữu hạn do dev khai, KHÔNG BAO GIỜ là đường dẫn thật): glob của dòng `routes` chi phối,
+	// "bypass" khi dòng bypass chi phối, "unmatched" khi không dòng nào chi phối (theo hành động mặc định).
+	Mau string
 }
 
 // Xet áp quy tắc cho đường dẫn THÔ (chưa chuẩn hoá, không query).
 func (b *Bang) Xet(duongDanTho string) KetQua {
 	d := GiaiTuyen(b.dong, DangDuongDan(duongDanTho))
-	if (d != nil && d.HanhDong == Cho) || (d == nil && b.macDinh == Cho) {
-		return KetQua{Qua: true}
+	mau := "unmatched"
+	for i := range b.dong {
+		if d == &b.dong[i] {
+			mau = d.Khop
+			if i < b.nBypass {
+				mau = "bypass"
+			}
+			break
+		}
 	}
-	return KetQua{Dong: d}
+	if (d != nil && d.HanhDong == Cho) || (d == nil && b.macDinh == Cho) {
+		return KetQua{Qua: true, Mau: mau}
+	}
+	return KetQua{Dong: d, Mau: mau}
 }
 
 // DuongDanTho lấy đường dẫn thô (không query/fragment) từ RequestURI của yêu cầu — KHÔNG qua url.Parse chuẩn hoá. Dạng

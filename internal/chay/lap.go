@@ -61,10 +61,11 @@ func Lap(cfg *cauhinh.Config, o TuyChon) (*Dich, error) {
 	}
 	hash := cfg.Ops.LogCustomerRef == "hash"
 	tinCay, _ := cauhinh.ParseTrustedProxies(cfg.Gate.TrustedProxies) // đã qua Kiem ⇒ không hỏng
+	logPath := cfg.Ops.LogPath
 	pr := proxy.Moi(proxy.Cau{
 		Cong: cong.Cong, Upstream: up, Xoa: cfg.XoaHeader(), CongKhai: congKhai(cfg), TrustedProxies: tinCay, GiuGachDuoi: cfg.Inject.AllowUnderscoreHeaders, Transport: o.Transport,
 		QuanSat: func(r *http.Request, kq quyetdinh.KetQua, d time.Duration) {
-			ghiRequest(log, do, bam, hash, r, kq, d)
+			ghiRequest(log, do, bam, hash, logPath, r, kq, d)
 			if o.QuanSat != nil {
 				o.QuanSat(r, kq)
 			}
@@ -105,11 +106,15 @@ func ketQuaNhan(kq quyetdinh.KetQua) string {
 	return kq.Quyet.LyDo
 }
 
-func ghiRequest(log *slog.Logger, do *vanhanh.DoLuong, bam *vanhanh.Bam, hash bool, r *http.Request, kq quyetdinh.KetQua, d time.Duration) {
+func ghiRequest(log *slog.Logger, do *vanhanh.DoLuong, bam *vanhanh.Bam, hash bool, logPath string, r *http.Request, kq quyetdinh.KetQua, d time.Duration) {
 	nhan := ketQuaNhan(kq)
 	do.Cong("dz_gate_requests_total", "ket_qua", nhan)
 	do.ThoiGian(d.Seconds())
-	attrs := []any{"method", r.Method, "path", duongDanLog(r), "ket_qua", nhan, "ms", d.Milliseconds()}
+	attrs := []any{"method", r.Method}
+	if p, ok := truongPath(logPath, r, kq); ok {
+		attrs = append(attrs, "path", p)
+	}
+	attrs = append(attrs, "ket_qua", nhan, "ms", d.Milliseconds())
 	if kq.PhanHoi != nil {
 		attrs = append(attrs, "status", kq.PhanHoi.Status)
 	}
@@ -120,6 +125,20 @@ func ghiRequest(log *slog.Logger, do *vanhanh.DoLuong, bam *vanhanh.Bam, hash bo
 		attrs = append(attrs, "cref_hash", bam.Khach(kq.Quyet.MaKhach))
 	}
 	log.Info("request", attrs...)
+}
+
+// truongPath: giá trị trường `path` theo ops.log_path; off ⇒ không có trường. route chỉ ghi nhãn tuyến từ cấu hình (không đường dẫn thật).
+func truongPath(mode string, r *http.Request, kq quyetdinh.KetQua) (string, bool) {
+	switch mode {
+	case "off":
+		return "", false
+	case "full":
+		return duongDanLog(r), true
+	}
+	if kq.Tuyen == "" {
+		return "unmatched", true
+	}
+	return kq.Tuyen, true
 }
 
 // duongDanLog: đường dẫn THÔ bỏ query (query có thể mang token/email), cắt 200 ký tự.

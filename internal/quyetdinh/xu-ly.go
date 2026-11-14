@@ -37,6 +37,8 @@ type KetQua struct {
 	PhanHoi *PhanHoi
 	// Nguon: giá trị `X-DZ-Entitlement-Source` khi cho qua mà không có kết quả hub (vd danh tính không xác định nhưng fail_mode cho qua).
 	Nguon string
+	// Tuyen: nhãn tuyến đã khớp (xem tuyen.KetQua.Mau); "loop" khi yêu cầu bị chặn vòng lặp trước khi xét tuyến.
+	Tuyen string
 }
 
 // cách lấy quyền: theo bản đệm; tươi (khách quay về sau thanh toán); hỏi lại (hub báo đã có thuê bao active ⇒ đọc tươi, cùng trần với tươi).
@@ -61,11 +63,12 @@ type luot struct {
 
 // XuLy quyết định một yêu cầu. KHÔNG panic/ném khi danh tính hoặc hub lỗi (trả LyDoKhongSan).
 func (c *Cong) XuLy(ctx context.Context, r *http.Request) KetQua {
-	pass := func(q Quyet, nguon string) KetQua { return KetQua{Quyet: q, Nguon: nguon} }
+	var mau string
+	pass := func(q Quyet, nguon string) KetQua { return KetQua{Quyet: q, Nguon: nguon, Tuyen: mau} }
 	// 1. Đã qua gate một lần ⇒ vòng lặp: chặn trước mọi việc khác, không gọi hub/upstream.
 	if len(r.Header.Values(CongHopHeader)) > 0 {
 		q := Quyet{LyDo: LyDoVong, Status: http.StatusLoopDetected}
-		return KetQua{Quyet: q, PhanHoi: phanHoiLoi(r.Method, q.Status, MaVong)}
+		return KetQua{Quyet: q, PhanHoi: phanHoiLoi(r.Method, q.Status, MaVong), Tuyen: "loop"}
 	}
 	// 2. Bypass (webhook, login, trang quay lại thanh toán…) và tuyến không cần kiểm quyền.
 	tho := tuyen.DuongDanTho(r.RequestURI)
@@ -73,6 +76,7 @@ func (c *Cong) XuLy(ctx context.Context, r *http.Request) KetQua {
 		tho = r.URL.EscapedPath()
 	}
 	xet := c.Bang.Xet(tho)
+	mau = xet.Mau
 	quayVe := LaQuayVe(r.Method, r.URL.RawQuery)
 	if xet.Qua {
 		// success_path là bypass: khách quay về đó vẫn được làm tươi đệm quyền (chỉ làm tươi: không chặn, không tiêm danh tính, mọi lỗi
@@ -102,9 +106,12 @@ func (c *Cong) XuLy(ctx context.Context, r *http.Request) KetQua {
 			return pass(lai.quyet, lai.nguon)
 		}
 		if lai.quyet.LyDo != LyDoKhongCoQuyen {
-			return c.tuChoi(ctx, r, lai.quyet, route).ketQua
+			kq := c.tuChoi(ctx, r, lai.quyet, route).ketQua
+			kq.Tuyen = mau
+			return kq
 		}
 	}
+	pt.ketQua.Tuyen = mau
 	return pt.ketQua
 }
 

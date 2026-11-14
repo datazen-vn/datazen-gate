@@ -6,8 +6,10 @@ Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm (r
 
 ### Thêm
 - `gate.trusted_proxies`: tin `X-Forwarded-For`/`-Proto` của load balancer đã khai (chỉ khi kết nối từ dải đó; mặc định rỗng = hành vi cũ). `--check` báo lỗi CIDR sai, cảnh báo `0.0.0.0/0`/`::/0`.
+- `ops.log_path` (`full` | `route` | `off`): chọn cách ghi đường dẫn trong log request. `--check` báo giá trị lạ.
 
-### Đổi
+### Thay đổi
+- **Đổi mặc định log**: trường `path` trước đây là đường dẫn thô; nay mặc định `ops.log_path: route` ghi mẫu tuyến đã khớp (`/dashboard/*`) hoặc `bypass` / `unmatched`, không còn đường dẫn thật. Muốn hành vi cũ đặt `ops.log_path: full` (vẫn bỏ query). `off` bỏ hẳn trường `path`.
 - Đổi tên: module Go `github.com/datazen-vn/market-gate` → `github.com/datazen-vn/datazen-gate` (tên binary `dz-gate` giữ nguyên).
 - Ghim lại `gate-v1` theo meta main `f5728a0` (63 ca; schema.json: cổng pattern ≤ 255).
 - Go 1.26.10 (go.mod + image build): sửa GO-2026-6809 ở `crypto/x509` mà govulncheck bắt.
@@ -31,4 +33,4 @@ Cổng paywall độc lập (reverse proxy Go) cho app có sẵn gắn thuê bao
 - Danh tính không xác định ⇒ 503 + `Retry-After`, không bao giờ fail-open; hỏi lại sau 409 chịu trần, không xoá đệm quyền (không vòng đốt hạn mức khoá API); đệm âm JWKS.
 
 ### Chưa có
-- Chế độ forward-auth, tuỳ chọn tắt log đường dẫn.
+- Chế độ forward-auth.
