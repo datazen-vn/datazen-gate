@@ -51,7 +51,7 @@ Chế độ `forward-auth` (`gate.mode`): `internal/proxy/forward-auth.go` (`GET
 
 ## Lệnh thường dùng
 
-Go 1.26.10 (`go.mod`).
+Go 1.26.11 (`go.mod`).
 
 ```bash
 bash cong/kiem-kho.sh          # gofmt · vet · build · test -race, 0 ca bỏ qua (trừ conformance). Mã thoát 0 đạt · 1 trượt · 2 không kiểm được

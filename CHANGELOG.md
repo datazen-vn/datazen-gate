@@ -12,7 +12,7 @@ Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm (r
 ### Đổi
 - Đổi tên: module Go `github.com/datazen-vn/market-gate` → `github.com/datazen-vn/datazen-gate` (tên binary `dz-gate` giữ nguyên).
 - Ghim lại `gate-v1` theo meta main `f5728a0` (63 ca; schema.json: cổng pattern ≤ 255).
-- Go 1.26.10 (go.mod + image build): sửa GO-2026-6809 ở `crypto/x509` mà govulncheck bắt.
+- Go 1.26.11 (go.mod + image build): sửa GO-2026-6859 ở `net/http` (trước đó 1.26.10 sửa GO-2026-6809 ở `crypto/x509`) mà govulncheck bắt.
 - CI: bỏ job `lint-kho` gọi action của repo meta private (repo public không gọi được); lint kho chạy ở máy.
 - Tên gói SDK mặt tiền đổi sang `@datazen-vn/sdk`.
 - Giấy phép MIT (trước là độc quyền), repo chuyển public; báo lỗ hổng qua private vulnerability reporting của GitHub.
