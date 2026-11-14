@@ -6,7 +6,7 @@
 # - Base image ghim theo DIGEST (build tái lập, tag bị đẩy đè không đổi được image). Nâng cấp: `docker buildx imagetools inspect <tag> --format
 #   '{{.Manifest.Digest}}'` rồi đổi digest (Renovate/Dependabot làm được tự động).
 # - Chạy nonroot (uid 65532); cổng 8080 (khách) và 9090 (vận hành, KHÔNG publish ra ngoài).
-FROM golang:1.26.10-alpine@sha256:87c65a688975c0b1d4585d204874c45ca78354670e3a5f11368c5a492303d696 AS build
+FROM golang:1.26.11-alpine@sha256:ae52b5bc6ed045a9ed26ab03dc19327a802a9cc9aa8b27ed57f5c6b60579b0bb AS build
 WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
