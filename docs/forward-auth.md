@@ -128,8 +128,9 @@ location / {
 
 - **App chỉ được tới qua proxy** (mạng nội bộ, không publish cổng của app): nếu không, ai cũng gửi được `X-DZ-*` giả.
 - **Proxy phải xoá `X-DZ-*` của client** trước khi gắn header của gate (Caddy: `request_header -X-DZ-…` trong đoạn trên, vì gate không đặt header không có giá trị và `copy_headers` chỉ chép header có trong phản hồi; Traefik `authResponseHeaders` và nginx `proxy_set_header` ở trên đã đặt lại/xoá đủ sáu header). Header `X-DZ-*` khác sáu tên trên vẫn lọt tới app: app chỉ nên đọc sáu tên này. Kiểm: gửi `X-DZ-Customer-Ref: gia` tới tuyến `allow`; app không được thấy giá trị đó.
+- **Proxy phải xoá header ghi đè đường dẫn/host** của client trước khi chuyển tới app: `X-Original-URL`, `X-Rewrite-URL`, `X-Original-URI`, `X-Original-Host`, `X-Host`, `X-HTTP-Host-Override`. Ở chế độ proxy gate tự xoá; ở forward-auth request tới app không đi qua gate. Một số framework (Symfony cũ CVE-2018-14773, Zend/Laminas, IIS rewrite) định tuyến theo các header này ⇒ gate xét `/public` còn app chạy `/premium/x`. Caddy: `request_header -X-Original-URL` (mỗi tên một dòng, cạnh các dòng `-X-DZ-…`); Traefik: middleware `headers.customRequestHeaders` đặt từng tên về `""`, xếp trước `dz-gate`; nginx: `proxy_set_header X-Original-URL "";` (mỗi tên một dòng) trong `location /`. Kiểm: gửi `X-Original-URL: /tuyen-tra-phi` tới tuyến `allow`; app không được thấy header đó.
 - `allow_from` chỉ gồm mạng của proxy; cổng `gate.listen` không publish ra ngoài.
 
 ## Đã kiểm
 
-Test Go (`internal/proxy/forward-auth_test.go`, `internal/chay/forward-auth_test.go`) mô phỏng đúng bộ header Traefik, Caddy, nginx. Chưa chạy thử với binary Caddy/Traefik/nginx thật trong repo này; hãy dán cấu hình trên vào môi trường của bạn và kiểm bằng ca "Header giả" ở trên.
+Test Go (`internal/proxy/forward-auth_test.go`, `internal/chay/forward-auth_test.go`) mô phỏng đúng bộ header Traefik, Caddy, nginx. Repo này chưa chạy với binary Caddy/Traefik/nginx thật; dán cấu hình trên vào môi trường của bạn rồi làm hai bước kiểm ở mục [Bắt buộc](#bắt-buộc).
