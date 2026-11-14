@@ -29,6 +29,18 @@ docker compose up -d
 
 File permissions, the mandatory deployment rules and the compose details: [docs/trien-khai.md](docs/trien-khai.md).
 
+## Download a build
+
+Each `v*` tag publishes a [release](https://github.com/datazen-vn/datazen-gate/releases) with `dz-gate_<version>_<os>_<arch>.tar.gz` for linux and darwin, amd64 and arm64, plus `SHA256SUMS`.
+
+```bash
+V=0.1.0; F=dz-gate_${V}_linux_amd64.tar.gz
+curl -fsSLO https://github.com/datazen-vn/datazen-gate/releases/download/v$V/$F
+curl -fsSLO https://github.com/datazen-vn/datazen-gate/releases/download/v$V/SHA256SUMS
+sha256sum -c --ignore-missing SHA256SUMS && tar -xzf $F
+./dz-gate_${V}_linux_amd64/dz-gate --version
+```
+
 ## Configuration
 
 One YAML file (`gate.yaml`; unknown fields are errors) plus environment variables for secrets. The file reference: [docs/cau-hinh.md](docs/cau-hinh.md); an annotated sample: [deploy/gate.example.yaml](deploy/gate.example.yaml).

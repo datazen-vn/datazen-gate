@@ -20,6 +20,20 @@ khách ──TLS──▶ [LB / Caddy / Traefik]  ──HTTP──▶ dz-gate:80
 4. Kiểm cấu hình trước khi chạy: `docker run --rm --env-file .env -v $PWD/gate.yaml:/c.yaml:ro dz-gate:0.1.0 --check /c.yaml`.
 5. `curl -i http://localhost:8080/` đi qua gate.
 
+## Tải bản dựng
+
+Không dùng Docker thì tải tệp chạy sẵn ở trang [Releases](https://github.com/datazen-vn/datazen-gate/releases): `dz-gate_<phiên bản>_<os>_<arch>.tar.gz` (linux/darwin, amd64/arm64) và `SHA256SUMS`. Luôn kiểm tổng băm trước khi chạy.
+
+```bash
+V=0.1.0; F=dz-gate_${V}_linux_amd64.tar.gz
+curl -fsSLO https://github.com/datazen-vn/datazen-gate/releases/download/v$V/$F
+curl -fsSLO https://github.com/datazen-vn/datazen-gate/releases/download/v$V/SHA256SUMS
+sha256sum -c --ignore-missing SHA256SUMS   # macOS: shasum -a 256 -c --ignore-missing SHA256SUMS
+tar -xzf $F && ./dz-gate_${V}_linux_amd64/dz-gate --version
+```
+
+Bản dựng không đóng gói gì thêm: vẫn phải theo các quy tắc bắt buộc bên dưới (tệp cấu hình quyền 0600, `ops.listen` loopback, app không mở cổng ra ngoài).
+
 ## Quy tắc BẮT BUỘC
 
 1. **App chỉ được tới được QUA gate.** Upstream tin `X-DZ-*` (khách, gói, tính năng). Gate xoá mọi header giả của client rồi mới tiêm của mình, nhưng nếu app còn mở cổng ra ngoài song song (publish port, cổng LB khác, đường tắt nội bộ), kẻ tấn công gửi thẳng header giả vào app và gate không cứu được. Compose mẫu: `app` KHÔNG `ports:`, mạng `noi-bo` là `internal: true`, chỉ `dz-gate` nằm ở cả `noi-bo` và `ngoai` (cần ra Internet để gọi hub). Bạn tự chịu việc app vẫn kết nối được tới DB của nó (thêm mạng riêng cho DB). App cần gọi API ngoài (thanh toán, email) thì cho vào thêm một mạng ra ngoài: vẫn an toàn miễn là app KHÔNG có `ports:`; điều cấm là publish cổng của app.

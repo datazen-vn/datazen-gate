@@ -5,6 +5,7 @@ Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm (r
 ## [Chưa phát hành]
 
 ### Thêm
+- Workflow `phat-hanh.yml`: tag `v*` ⇒ build linux/darwin x amd64/arm64 (`-trimpath`, phiên bản qua ldflags), ghi `SHA256SUMS`, tạo GitHub release. Mục "Tải bản dựng" trong README và `docs/trien-khai.md`.
 - `gate.trusted_proxies`: tin `X-Forwarded-For`/`-Proto` của load balancer đã khai (chỉ khi kết nối từ dải đó; mặc định rỗng = hành vi cũ). `--check` báo lỗi CIDR sai, cảnh báo `0.0.0.0/0`/`::/0`.
 - Chế độ `gate.mode: forward-auth`: `GET /_dz/auth` cho Caddy `forward_auth`, Traefik ForwardAuth, nginx `auth_request`. Dựng request ảo từ `X-Forwarded-Method/-Host/-Uri` hoặc `X-Original-URI/-Method`, dùng đúng lõi quyết định của chế độ proxy (200 + `X-DZ-*` hoặc 302/401/402/503 cùng thân/`Retry-After`). Chỉ tin proxy trong `gate.forward_auth.allow_from` (403 `dz_forward_untrusted`, không gọi hub); thiếu/hỏng URI hoặc Host ngoài `paywall.public_origins` ⇒ 400 `dz_forward_bad_request`. Hướng dẫn: `docs/forward-auth.md`.
 
