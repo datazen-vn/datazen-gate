@@ -18,6 +18,13 @@ jobs:
         with:
           go-version-file: go.mod
 
+      # Bản phát hành công khai của cổng ra Internet: cổng kho + govulncheck phải xanh, không thì không build/release.
+      # Tag gắn được lên bất kỳ commit nào, nên kiểm lại ở đây chứ không dựa vào `cong` của main.
+      - name: cổng kho
+        run: bash cong/kiem-kho.sh
+      - name: govulncheck
+        run: bash cong/kiem-govulncheck.sh
+
       - name: build các bản
         run: |
           set -euo pipefail
