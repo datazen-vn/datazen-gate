@@ -203,6 +203,7 @@ func TestForwardAuthCheStatusChoNginx(t *testing.T) {
 	}
 	// Qua Caddy/Traefik (có X-Forwarded-Method) header che bị bỏ qua.
 	delete(h, "X-Original-URI")
+	h[HeaderCheStatus] = "1" // đã xoá ở trên: đặt lại để ca này thật sự kiểm header che
 	h["X-Forwarded-Uri"], h["X-Forwarded-Method"] = "/dashboard/x", "GET"
 	if res := goiFA(t, s, "/_dz/auth", h); res.StatusCode != 402 {
 		t.Fatalf("có X-Forwarded-Method ⇒ không che: %d", res.StatusCode)
@@ -215,5 +216,18 @@ func TestForwardAuthCheStatusChoNginx(t *testing.T) {
 	h[HeaderCheStatus] = "1"
 	if res := goiFA(t, ok, "/_dz/auth", h); res.StatusCode != 200 {
 		t.Fatalf("%d", res.StatusCode)
+	}
+}
+
+// tin đọc RemoteAddr thật: dạng không cổng vẫn được phân tích đúng, dạng hỏng/IPv4-mapped không lọt qua danh sách.
+func TestForwardAuthTinRemoteAddr(t *testing.T) {
+	h := &forwardAuth{cau: CauForwardAuth{TinTu: []netip.Prefix{netip.MustParsePrefix("10.0.0.0/8")}}}
+	for remote, muon := range map[string]bool{
+		"10.1.2.3:5555": true, "10.1.2.3": true, "[::ffff:10.1.2.3]:80": true,
+		"127.0.0.1": false, "127.0.0.1:80": false, "": false, "khong-phai-ip:80": false,
+	} {
+		if got := h.tin(remote); got != muon {
+			t.Errorf("tin(%q)=%v, muốn %v", remote, got, muon)
+		}
 	}
 }
