@@ -52,7 +52,10 @@ Gate XOÁ khỏi request của client: `X-DZ-*`, `X-Auth-Request-*`, `X-Forwarde
 
 `bash cong/kiem-docker.sh` (cần docker): build image thật, chạy read-only/nonroot, kiểm kích thước < 15 MB, healthcheck, compose mẫu đúng luật (app không publish cổng), request thật qua cổng (200/401/404), cổng vận hành, 502 khi app chết, log không lộ bí mật, tắt êm mã 0.
 
+## Đã có Caddy/Traefik/nginx?
+
+Dùng chế độ `forward-auth` để không chèn thêm một hop: xem [forward-auth.md](forward-auth.md).
+
 ## Chưa hỗ trợ (follow-up có chủ)
 
-- **Chế độ forward-auth** (`GET /_dz/auth` cho Caddy `forward_auth`/Traefik ForwardAuth/nginx `auth_request`): chưa viết. Dùng chế độ proxy; nếu đã có Caddy/Traefik/nginx, đặt chúng TRƯỚC dz-gate như sơ đồ trên.
 - Tuỳ chọn tắt log đường dẫn, publish image (chờ ADR-0002).

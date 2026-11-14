@@ -97,3 +97,25 @@ func PhanHoiKhongTimThay(phuongThuc string) *PhanHoi {
 func PhanHoiUpstreamLoi(phuongThuc string) *PhanHoi {
 	return phanHoiLoi(phuongThuc, http.StatusBadGateway, MaUpstream)
 }
+
+// Mã lỗi riêng của chế độ forward-auth (`GET /_dz/auth`).
+const (
+	MaForwardKhongTin = "dz_forward_untrusted"
+	MaForwardSai      = "dz_forward_bad_request"
+)
+
+// LyDo của phản hồi forward-auth do gate tự chặn trước khi vào lõi quyết định (nhãn log/metric hữu hạn).
+const (
+	LyDoForwardKhongTin = "forward_untrusted"
+	LyDoForwardSai      = "forward_bad_request"
+)
+
+// PhanHoiForwardKhongTin: 403 — kết nối không thuộc gate.forward_auth.allow_from. Không gọi hub.
+func PhanHoiForwardKhongTin(phuongThuc string) *PhanHoi {
+	return phanHoiLoi(phuongThuc, http.StatusForbidden, MaForwardKhongTin)
+}
+
+// PhanHoiForwardSai: 400 — thiếu/hỏng X-Forwarded-Uri|X-Original-URI hoặc Host không khớp paywall.public_origins.
+func PhanHoiForwardSai(phuongThuc string) *PhanHoi {
+	return phanHoiLoi(phuongThuc, http.StatusBadRequest, MaForwardSai)
+}

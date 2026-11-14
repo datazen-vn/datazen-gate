@@ -82,12 +82,19 @@ func Kiem(c *Config, env Env) *KetQuaKiem {
 }
 
 func kiemGate(k *KetQuaKiem, c *Config) {
-	if c.Gate.Mode != "proxy" {
-		k.loi("gate.mode", "chỉ hỗ trợ \"proxy\", nhận %q", c.Gate.Mode)
+	if c.Gate.Mode != "proxy" && c.Gate.Mode != "forward-auth" {
+		k.loi("gate.mode", "phải là \"proxy\" hoặc \"forward-auth\", nhận %q", c.Gate.Mode)
 	}
 	host, port, ok := tachDiaChi(c.Gate.Listen)
 	if !ok {
 		k.loi("gate.listen", "phải dạng host:port hoặc :port (vd \":8080\"), nhận %q", c.Gate.Listen)
+	}
+	if c.Gate.Mode == "forward-auth" {
+		kiemForwardAuth(k, c)
+		return
+	}
+	if len(c.Gate.ForwardAuth.AllowFrom) > 0 {
+		k.canh("gate.forward_auth", "chỉ dùng khi gate.mode = forward-auth, đang bị bỏ qua")
 	}
 	u, err := url.Parse(c.Gate.Upstream)
 	switch {
