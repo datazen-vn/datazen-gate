@@ -33,7 +33,15 @@ Mọi phản hồi của gate đều `Cache-Control: no-store`; thân JSON `{ "c
 
 ## Log (JSON, stderr)
 
-Một dòng `request` mỗi request: `method`, `path` (THÔ, bỏ query, ≤ 200 ký tự), `ket_qua`, `ms`, `status` (khi gate tự trả), `nguon` (nguồn quyền), `cref_hash`. **Không** log cookie, token, khoá, query, `customer_ref` thô. Lưu ý: đường dẫn dạng `/invite/<token>` vẫn vào log.
+Một dòng `request` mỗi request: `method`, `path`, `ket_qua`, `ms`, `status` (khi gate tự trả), `nguon` (nguồn quyền), `cref_hash`. **Không** log cookie, token, khoá, query, `customer_ref` thô.
+
+Trường `path` theo [`ops.log_path`](cau-hinh.md):
+
+| `ops.log_path` | `path` |
+|---|---|
+| `route` (mặc định) | nhãn tuyến từ cấu hình, không bao giờ là đường dẫn thật: glob của dòng `routes` đã khớp (vd `/dashboard/*`), `bypass`, `unmatched`, `loop` (chặn vòng lặp 508), `forward` (forward-auth từ chối: nguồn không tin hoặc request ảo sai) |
+| `full` | đường dẫn THÔ, bỏ query, ≤ 200 ký tự. Đường dẫn dạng `/invite/<token>` hay `/don-hang/<mã>` vào log |
+| `off` | không có trường `path` |
 
 ## Mã thoát
 
