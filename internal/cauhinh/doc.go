@@ -128,8 +128,9 @@ type Inject struct {
 type Ops struct {
 	Listen         string `yaml:"listen"`
 	LogCustomerRef string `yaml:"log_customer_ref"` // hash (mặc định) | none
-	// LogPath: trường `path` trong log mỗi request. route (mặc định) = mẫu tuyến đã khớp / "bypass" / "unmatched"; full = đường dẫn thô
-	// (luôn bỏ query); off = không có trường path. Đường dẫn có thể mang dữ liệu cá nhân (email, mã đơn, token) của khách cuối.
+	// LogPath: trường `path` trong log mỗi request. route (mặc định) = mẫu tuyến đã khớp / "bypass" / "unmatched" / "loop" /
+	// "forward"; full = đường dẫn thô (luôn bỏ query); off = không có trường path. Đường dẫn có thể mang dữ liệu cá nhân (email,
+	// mã đơn, token) của khách cuối.
 	LogPath string `yaml:"log_path"`
 }
 
