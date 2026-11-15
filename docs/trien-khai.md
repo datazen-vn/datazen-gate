@@ -16,8 +16,8 @@ khách ──TLS──▶ [LB / Caddy / Traefik]  ──HTTP──▶ dz-gate:80
    DZ_JWT_SECRET=…        # nếu identity dùng secret_env
    ```
 2. Quyền tệp: `sudo chown 65532:65532 gate.yaml && chmod 0400 gate.yaml` (container chạy uid 65532, chỉ uid đó đọc được; người dùng khác trên máy thì không) và `chmod 0600 .env` (khoá API).
-3. Build image: `docker build -f deploy/Dockerfile --build-arg PHIEN_BAN=0.1.0 -t dz-gate:0.1.0 .` rồi `docker compose config` (kiểm) và `docker compose up -d`.
-4. Kiểm cấu hình trước khi chạy: `docker run --rm --env-file .env -v $PWD/gate.yaml:/c.yaml:ro dz-gate:0.1.0 --check /c.yaml`.
+3. Build image: `docker build -f deploy/Dockerfile --build-arg PHIEN_BAN=0.2.0 -t dz-gate:0.2.0 .` rồi `docker compose config` (kiểm) và `docker compose up -d`.
+4. Kiểm cấu hình trước khi chạy: `docker run --rm --env-file .env -v $PWD/gate.yaml:/c.yaml:ro dz-gate:0.2.0 --check /c.yaml`.
 5. `curl -i http://localhost:8080/` đi qua gate.
 
 ## Tải bản dựng
@@ -25,7 +25,7 @@ khách ──TLS──▶ [LB / Caddy / Traefik]  ──HTTP──▶ dz-gate:80
 Không dùng Docker thì tải tệp chạy sẵn ở trang [Releases](https://github.com/datazen-vn/datazen-gate/releases): `dz-gate_<phiên bản>_<os>_<arch>.tar.gz` (linux/darwin, amd64/arm64) và `SHA256SUMS`. Luôn kiểm tổng băm trước khi chạy.
 
 ```bash
-V=0.1.0; F=dz-gate_${V}_linux_amd64.tar.gz
+V=0.2.0; F=dz-gate_${V}_linux_amd64.tar.gz
 curl -fsSLO https://github.com/datazen-vn/datazen-gate/releases/download/v$V/$F
 curl -fsSLO https://github.com/datazen-vn/datazen-gate/releases/download/v$V/SHA256SUMS
 sha256sum -c --ignore-missing SHA256SUMS   # macOS: shasum -a 256 -c --ignore-missing SHA256SUMS

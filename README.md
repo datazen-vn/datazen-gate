@@ -4,15 +4,15 @@
 
 Standalone paywall gate in Go that sits in front of an existing app and checks DataZen subscription entitlements.
 
-**Status:** experimental · **Owner:** datazen-vn admins · **License:** MIT
+**Status:** active · **Owner:** datazen-vn admins · **License:** MIT
 
-Under construction (`0.x`, strict semantic versioning: it runs on other people's machines). `dz-gate` stands in front of a developer's app, identifies the customer, asks the hub what the customer may use, and lets the request through or sends the customer to the checkout page. The app needs no code change.
+Public `0.x` release. `dz-gate` stands in front of a developer's app, identifies the customer, asks the hub what the customer may use, and lets the request through or sends the customer to the checkout page. The app needs no code change.
 
 ## Status
 
-Experimental and private. It goes public only after the slice-2 E2E passes: the gate in front of an app without the SDK, on the platform `deploy/saas-e2e` stack.
+Public and MIT licensed since 2026-11-11. Version `0.x`, strict semantic versioning: a minor release can change a default and says so in the [changelog](CHANGELOG.md) (0.2.0 changed the default of request path logging, see `ops.log_path`).
 
-Not yet available: an option to turn off path logging.
+Builds are on [GitHub releases](https://github.com/datazen-vn/datazen-gate/releases) and at [docs.datazen.vn/tai-ve](https://docs.datazen.vn/tai-ve/); check each file against `SHA256SUMS` before you run it. Two modes: reverse proxy (default) and forward-auth for the Caddy, Traefik or nginx you already run ([docs/forward-auth.md](docs/forward-auth.md)).
 
 ## Quick start
 
@@ -22,8 +22,8 @@ Requirements: Docker. Go (see `go.mod`) to build from source.
 cp deploy/compose.example.yml compose.yml
 cp deploy/gate.example.yaml gate.yaml          # set upstream, identity, routes, paywall
 printf 'DZ_API_KEY=dz_test_<key>\n' > .env && chmod 0600 .env
-docker build -f deploy/Dockerfile --build-arg PHIEN_BAN=0.1.0 -t dz-gate:0.1.0 .
-docker run --rm --env-file .env -v "$PWD/gate.yaml:/c.yaml:ro" dz-gate:0.1.0 --check /c.yaml
+docker build -f deploy/Dockerfile --build-arg PHIEN_BAN=0.2.0 -t dz-gate:0.2.0 .
+docker run --rm --env-file .env -v "$PWD/gate.yaml:/c.yaml:ro" dz-gate:0.2.0 --check /c.yaml
 docker compose up -d
 ```
 
@@ -34,7 +34,7 @@ File permissions, the mandatory deployment rules and the compose details: [docs/
 Each `v*` tag publishes a [release](https://github.com/datazen-vn/datazen-gate/releases) with `dz-gate_<version>_<os>_<arch>.tar.gz` for linux and darwin, amd64 and arm64, plus `SHA256SUMS`.
 
 ```bash
-V=0.1.0; F=dz-gate_${V}_linux_amd64.tar.gz
+V=0.2.0; F=dz-gate_${V}_linux_amd64.tar.gz
 curl -fsSLO https://github.com/datazen-vn/datazen-gate/releases/download/v$V/$F
 curl -fsSLO https://github.com/datazen-vn/datazen-gate/releases/download/v$V/SHA256SUMS
 sha256sum -c --ignore-missing SHA256SUMS && tar -xzf $F
@@ -56,7 +56,7 @@ One YAML file (`gate.yaml`; unknown fields are errors) plus environment variable
 
 ## Architecture
 
-A reverse proxy. A request is either bypassed (`/api/dz/*`, `/_dz/*`, the login page, the success path) or matched against `routes`, then identified (JWT with JWKS, or a session hook), then checked for entitlement. A browser navigation without entitlement gets a 302 to the checkout page; an API call gets a 402 JSON. If the customer cannot be identified the gate answers 503 and never lets an anonymous request through. Behaviour in full: [docs/hanh-vi-va-trien-khai-an-toan.md](docs/hanh-vi-va-trien-khai-an-toan.md). Code layout and boundaries: [AGENTS.md](AGENTS.md).
+A reverse proxy (in forward-auth mode, an endpoint your own proxy calls instead). A request is either bypassed (`/api/dz/*`, `/_dz/*`, the login page, the success path) or matched against `routes`, then identified (JWT with JWKS, or a session hook), then checked for entitlement. A browser navigation without entitlement gets a 302 to the checkout page; an API call gets a 402 JSON. If the customer cannot be identified the gate answers 503 and never lets an anonymous request through. Behaviour in full: [docs/hanh-vi-va-trien-khai-an-toan.md](docs/hanh-vi-va-trien-khai-an-toan.md). Code layout and boundaries: [AGENTS.md](AGENTS.md).
 
 ## API surface
 
@@ -64,6 +64,7 @@ A reverse proxy. A request is either bypassed (`/api/dz/*`, `/_dz/*`, the login 
 | --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | Everything else                               | Proxied to the upstream after the paywall decision, with `X-DZ-*` headers injected by the gate     |
 | `/_dz/healthz`, `/_dz/readyz`, `/_dz/metrics` | Health, readiness and metrics on the operations port only; on the public port `/_dz/*` answers 404 |
+| `GET /_dz/auth` (forward-auth mode only) | The one `/_dz/*` path on the public port; your proxy asks it before each request, see [docs/forward-auth.md](docs/forward-auth.md) |
 
 Responses, error codes and metrics: [docs/ma-loi.md](docs/ma-loi.md).
 
@@ -83,10 +84,10 @@ Runbook: [docs/trien-khai.md](docs/trien-khai.md). Deploy as a container image; 
 ## Contracts & docs
 
 - Contracts: the `gate-v1` conformance suite lives in the internal contracts repository `datazen-vn/datazen-hub-meta`; `cong/kiem-conformance.sh` needs a checkout of it next to this one (`../meta` or `DZ_META_DIR`) and is run by the maintainers on every change
-- Docs: [configuration](docs/cau-hinh.md), [deployment](docs/trien-khai.md), [responses and metrics](docs/ma-loi.md), [changelog](CHANGELOG.md)
+- Docs: [configuration](docs/cau-hinh.md), [deployment](docs/trien-khai.md), [forward-auth](docs/forward-auth.md), [responses and metrics](docs/ma-loi.md), [changelog](CHANGELOG.md)
 
 ## License
 
 MIT, see [LICENSE](LICENSE).
 
-Last updated: 2026-11-11
+Last updated: 2026-11-16
