@@ -51,4 +51,5 @@ inject:
 ops:
   listen: "127.0.0.1:9090"
   log_customer_ref: hash
+  log_path: route
 `

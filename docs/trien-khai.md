@@ -72,4 +72,4 @@ Dùng chế độ `forward-auth` để không chèn thêm một hop: xem [forwar
 
 ## Chưa hỗ trợ (follow-up có chủ)
 
-- Tuỳ chọn tắt log đường dẫn, publish image (chờ ADR-0002).
+- Publish image (chờ ADR-0002).
