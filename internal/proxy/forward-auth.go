@@ -59,7 +59,7 @@ func (h *forwardAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if !h.tin(r.RemoteAddr) {
 		ph := quyetdinh.PhanHoiForwardKhongTin(r.Method)
-		h.ghi(w, r, bd, quyetdinh.KetQua{Quyet: quyetdinh.Quyet{LyDo: quyetdinh.LyDoForwardKhongTin, Status: ph.Status}, PhanHoi: ph})
+		h.ghi(w, r, bd, quyetdinh.KetQua{Quyet: quyetdinh.Quyet{LyDo: quyetdinh.LyDoForwardKhongTin, Status: ph.Status}, PhanHoi: ph, Tuyen: "forward"})
 		return
 	}
 	// Chỉ nginx (không có X-Forwarded-Method) được che: client qua Caddy/Traefik tự gửi header này không làm mất 302/402 của chính họ.
@@ -67,7 +67,7 @@ func (h *forwardAuth) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	vr := h.dungRequestAo(r)
 	if vr == nil {
 		ph := quyetdinh.PhanHoiForwardSai(r.Method)
-		h.ghi(w, r, bd, quyetdinh.KetQua{Quyet: quyetdinh.Quyet{LyDo: quyetdinh.LyDoForwardSai, Status: ph.Status}, PhanHoi: ph})
+		h.ghi(w, r, bd, quyetdinh.KetQua{Quyet: quyetdinh.Quyet{LyDo: quyetdinh.LyDoForwardSai, Status: ph.Status}, PhanHoi: ph, Tuyen: "forward"})
 		return
 	}
 	kq := h.cau.Cong.XuLy(r.Context(), vr)

@@ -37,7 +37,8 @@ type KetQua struct {
 	PhanHoi *PhanHoi
 	// Nguon: giá trị `X-DZ-Entitlement-Source` khi cho qua mà không có kết quả hub (vd danh tính không xác định nhưng fail_mode cho qua).
 	Nguon string
-	// Tuyen: nhãn tuyến đã khớp (xem tuyen.KetQua.Mau); "loop" khi yêu cầu bị chặn vòng lặp trước khi xét tuyến.
+	// Tuyen: nhãn tuyến đã khớp (xem tuyen.KetQua.Mau); "loop" khi yêu cầu bị chặn vòng lặp trước khi xét tuyến; "forward" khi forward-auth
+	// từ chối (nguồn không tin / request ảo sai) trước khi xét tuyến. Luôn là tập hữu hạn, không bao giờ là đường dẫn thật.
 	Tuyen string
 }
 

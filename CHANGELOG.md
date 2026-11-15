@@ -2,7 +2,7 @@
 
 Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm (repo công khai từ 11/11/2026; `0.x` tới khi E2E lát 2 xanh).
 
-## [Chưa phát hành]
+## [Chưa phát hành] — bản kế là minor (0.2.0): đổi mặc định log
 
 ### Thêm
 - Workflow `phat-hanh.yml`: tag `v*` ⇒ build linux/darwin x amd64/arm64 (`-trimpath`, phiên bản qua ldflags), ghi `SHA256SUMS`, tạo GitHub release. Mục "Tải bản dựng" trong README và `docs/trien-khai.md`.
@@ -11,7 +11,7 @@ Theo [Keep a Changelog](https://keepachangelog.com/vi/1.1.0/); semver nghiêm (r
 - `ops.log_path` (`full` | `route` | `off`): chọn cách ghi đường dẫn trong log request. `--check` báo giá trị lạ.
 
 ### Thay đổi
-- **Đổi mặc định log**: trường `path` trước đây là đường dẫn thô; nay mặc định `ops.log_path: route` ghi mẫu tuyến đã khớp (`/dashboard/*`) hoặc `bypass` / `unmatched`, không còn đường dẫn thật. Muốn hành vi cũ đặt `ops.log_path: full` (vẫn bỏ query). `off` bỏ hẳn trường `path`.
+- **Đổi mặc định log**: trường `path` trước đây là đường dẫn thô; nay mặc định `ops.log_path: route` ghi mẫu tuyến đã khớp (`/dashboard/*`) hoặc `bypass` / `unmatched` / `loop` / `forward`, không còn đường dẫn thật. Muốn hành vi cũ đặt `ops.log_path: full` (vẫn bỏ query). `off` bỏ hẳn trường `path`.
 - Đổi tên: module Go `github.com/datazen-vn/market-gate` → `github.com/datazen-vn/datazen-gate` (tên binary `dz-gate` giữ nguyên).
 - Ghim lại `gate-v1` theo meta main `f5728a0` (63 ca; schema.json: cổng pattern ≤ 255).
 - Go 1.26.11 (go.mod + image build): sửa GO-2026-6859 ở `net/http` (trước đó 1.26.10 sửa GO-2026-6809 ở `crypto/x509`) mà govulncheck bắt.
