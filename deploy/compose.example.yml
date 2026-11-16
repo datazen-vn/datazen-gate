@@ -15,7 +15,7 @@ services:
     restart: unless-stopped
 
   dz-gate:
-    image: dz-gate:0.1.0 # hoặc build: { context: .., dockerfile: deploy/Dockerfile }
+    image: dz-gate:0.2.0 # hoặc build: { context: .., dockerfile: deploy/Dockerfile }
     depends_on: [app]
     env_file: .env # DZ_API_KEY=dz_test_… (và DZ_JWT_SECRET nếu dùng secret_env)
     # Tránh khoá hiện ở `docker inspect`: dùng secrets của compose (`secrets: [dz_api_key]` + `DZ_API_KEY_FILE=/run/secrets/dz_api_key`, tệp 0400)

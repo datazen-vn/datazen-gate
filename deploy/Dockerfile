@@ -1,5 +1,5 @@
 # dz-gate: image tối giản (distroless, chạy nonroot). Build từ GỐC kho:
-#   docker build -f deploy/Dockerfile --build-arg PHIEN_BAN=0.1.0 -t dz-gate:0.1.0 .
+#   docker build -f deploy/Dockerfile --build-arg PHIEN_BAN=0.2.0 -t dz-gate:0.2.0 .
 #
 # - CGO tắt, tệp tĩnh: không có shell, không có package manager trong image cuối (bề mặt tấn công nhỏ).
 # - Không có shell nên HEALTHCHECK dùng chính binary (`--healthcheck`), dạng exec.
